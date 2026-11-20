@@ -17,7 +17,7 @@ jobs:
   pruefen:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Python-Syntax prüfen
         run: |
           python3 -m py_compile dienst/kinderstick_dienst.py
@@ -46,7 +46,7 @@ jobs:
     needs: pruefen
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Speicherplatz schaffen (Desktop-Images sind groß)
         run: |
@@ -76,13 +76,14 @@ jobs:
             quay.io/centos-bootc/bootc-image-builder:latest \
             --type raw --rootfs btrfs \
             localhost/kinderstick:latest
-          sudo chown -R "$USER" ausgabe
+          sudo chown -R "$(id -u):$(id -g)" ausgabe
           ls -lh ausgabe/image/
 
       - name: Abbild komprimieren
         run: |
-          xz -T0 -6 ausgabe/image/disk.raw
-          mv ausgabe/image/disk.raw.xz "kinderstick-$(date +%Y-%m-%d).raw.xz"
+          # Über die Standardausgabe komprimieren – keine Rechte-/Gruppenübernahme nötig
+          xz -T0 -6 -c ausgabe/image/disk.raw > "kinderstick-$(date +%Y-%m-%d).raw.xz"
+          rm -f ausgabe/image/disk.raw
           sha256sum kinderstick-*.raw.xz > kinderstick-pruefsumme.txt
           ls -lh kinderstick-*
 
