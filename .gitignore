@@ -1,0 +1,11 @@
+# Interne Dokumente – nicht veröffentlichen
+intern/
+# Heruntergeladene Stick-Abbilder
+*.raw
+*.raw.xz
+# Lokale Testdaten des Dienstes (Testmodus)
+testdaten/
+__pycache__/
+*.tmp
+# Vorschaubilder
+_vorschau/

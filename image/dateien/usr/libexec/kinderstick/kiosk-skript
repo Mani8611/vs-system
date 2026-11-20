@@ -1,0 +1,15 @@
+#!/bin/sh
+# Kinder-Stick: Kiosk des Kinderkontos. Zeigt ausschließlich die Kinder-Oberfläche.
+# Wird Firefox geschlossen, startet er sofort neu.
+
+# Warten, bis der lokale Dienst antwortet
+i=0
+until curl -fs -o /dev/null http://127.0.0.1:8411/api/status || [ "$i" -ge 30 ]; do
+    i=$((i + 1))
+    sleep 1
+done
+
+while true; do
+    firefox --kiosk "http://127.0.0.1:8411/"
+    sleep 1
+done

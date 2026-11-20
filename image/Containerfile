@@ -1,0 +1,51 @@
+# Kinder-Stick – System-Image (bootc)
+#
+# Basis: offizielles Fedora-Silverblue-Image (GNOME, als bootfähiger Container).
+# Fedora 45 (Herbst 2026) bringt GNOME 51 mit. Version bei Bedarf anheben (Release-Notizen prüfen).
+#
+# Bauen (im Hauptordner des Projekts, Linux mit Podman):
+#   podman build -f image/Containerfile -t kinderstick:latest .
+#
+# Hinweis: Vor einer Weitergabe Fedora-Logos/-Namen durch eigene ersetzen
+# (Fedora-Markenrichtlinien, siehe doku/technik-phase1.md, „Technisch offen“).
+
+ARG FEDORA_VERSION=45
+FROM quay.io/fedora-ostree-desktops/silverblue:${FEDORA_VERSION}
+
+# Zusatzpakete:
+#  - gnome-kiosk-script-session: Kiosk-Sitzung für das Kinderkonto
+#  - gcompris-qt, tuxpaint, tuxmath, tuxtype2, klettres, ktuberling, blinken:
+#    Kinderprogramme (offline) – Paketnamen am 20.11.2026 auf packages.fedoraproject.org
+#    für Fedora 44 und 45 bestätigt (Tux Typing heißt als Paket „tuxtype2“, Befehl „tuxtype“)
+#  - speech-dispatcher, espeak-ng: Vorlesen in der Kinder-Oberfläche (Web Speech API)
+#  - python3-gobject, gtk4, webkitgtk6.0: „Lernfenster“ für freigegebene Lern-Webseiten
+#  - glibc-langpack-de: deutsche Sprache
+RUN dnf -y install \
+        gnome-kiosk-script-session \
+        gcompris-qt \
+        tuxpaint \
+        tuxmath \
+        tuxtype2 \
+        klettres \
+        ktuberling \
+        blinken \
+        speech-dispatcher \
+        espeak-ng \
+        python3-gobject \
+        gtk4 \
+        webkitgtk6.0 \
+        glibc-langpack-de \
+    && dnf clean all
+
+# Eigene Dateien: Systemkonfiguration, Dienst, Kinder-Oberfläche
+COPY image/dateien/ /
+COPY dienst/kinderstick_dienst.py /usr/lib/kinderstick/kinderstick_dienst.py
+COPY oberflaeche/ /usr/share/kinderstick/oberflaeche/
+
+RUN chmod 0755 /usr/libexec/kinderstick/* \
+    && ln -sf ../usr/share/zoneinfo/Europe/Vienna /etc/localtime \
+    && dconf update \
+    && systemctl enable kinderstick-erststart.service kinderstick-dienst.service
+
+# Prüft das Image auf typische bootc-Fehler
+RUN bootc container lint

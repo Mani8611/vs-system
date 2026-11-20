@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kinder-Stick</title>
+  <link rel="stylesheet" href="stil.css">
+</head>
+<body class="kind">
+  <header class="kopf">
+    <h1 id="gruss">Hallo!</h1>
+    <div class="zeit" aria-live="polite">
+      <div class="zeit-text" id="zeit-text"></div>
+      <div class="balken"><div class="balken-fuellung" id="balken"></div></div>
+    </div>
+  </header>
+
+  <main id="kacheln" class="kacheln" aria-label="Deine Programme"></main>
+
+  <section id="sperre" class="sperre" hidden aria-live="polite">
+    <div class="sperre-symbol" id="sperre-symbol"></div>
+    <h2 id="sperre-titel"></h2>
+    <p id="sperre-text"></p>
+  </section>
+
+  <button id="eltern-knopf" class="eltern-knopf" type="button" title="Für Mama und Papa" aria-label="Eltern-Bereich">🔒</button>
+
+  <dialog id="pin-dialog" aria-labelledby="pin-titel">
+    <h2 class="pin-titel" id="pin-titel">Eltern-PIN</h2>
+    <div class="pin-anzeige" id="pin-anzeige"></div>
+    <p class="pin-fehler" id="pin-fehler"></p>
+    <div class="pin-tasten" id="pin-tasten"></div>
+    <button class="pin-abbrechen" id="pin-abbrechen" type="button">Abbrechen</button>
+  </dialog>
+
+  <script src="vorschau.js"></script>
+  <script src="gemeinsam.js"></script>
+  <script src="start.js"></script>
+</body>
+</html>

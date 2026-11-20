@@ -1,0 +1,100 @@
+#!/usr/bin/python3
+"""Kinder-Stick – Lernfenster.
+
+Zeigt eine freigegebene Lern-Webseite (z. B. ANTON) in einem eigenen Fenster mit großem
+„Fertig“-Knopf. Navigation ist nur zu den erlaubten Domains möglich, alles andere wird
+ignoriert. Anmeldedaten (Cookies) bleiben im Kinderkonto gespeichert.
+
+Aufruf: lernfenster --titel ANTON --start https://anton.app/de/ --erlaubt anton.app[,weitere.at]
+"""
+import argparse
+import os
+import sys
+from urllib.parse import urlparse
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("WebKit", "6.0")
+from gi.repository import Gdk, Gio, Gtk, WebKit  # noqa: E402
+
+CSS = """
+button.fertig { font-size: 20px; font-weight: bold; padding: 8px 24px; }
+"""
+
+
+def domain_erlaubt(uri, domains):
+    """True, wenn die Adresse https ist und zu einer erlaubten Domain gehört."""
+    if uri in ("about:blank", ""):
+        return True
+    teile = urlparse(uri)
+    if teile.scheme != "https":
+        return False
+    host = (teile.hostname or "").lower()
+    return any(host == d or host.endswith("." + d) for d in domains)
+
+
+class Lernfenster(Gtk.Application):
+    def __init__(self, args):
+        super().__init__(application_id="at.kinderstick.Lernfenster",
+                         flags=Gio.ApplicationFlags.NON_UNIQUE)
+        self.args = args
+        self.domains = [d.strip().lower() for d in args.erlaubt.split(",") if d.strip()]
+
+    def do_activate(self):
+        stil = Gtk.CssProvider()
+        stil.load_from_string(CSS)   # ab GTK 4.12
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(), stil, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+        fenster = Gtk.ApplicationWindow(application=self, title=self.args.titel)
+        kopf = Gtk.HeaderBar()
+        kopf.set_show_title_buttons(False)
+        knopf = Gtk.Button(label="✔  Fertig – zurück")
+        knopf.add_css_class("suggested-action")
+        knopf.add_css_class("fertig")
+        knopf.connect("clicked", lambda *_: fenster.close())
+        kopf.pack_start(knopf)
+        fenster.set_titlebar(kopf)
+
+        basis = os.path.expanduser("~/.local/share/kinderstick/lernfenster")
+        cache = os.path.expanduser("~/.cache/kinderstick/lernfenster")
+        sitzung = WebKit.NetworkSession.new(basis, cache)
+        ansicht = WebKit.WebView(network_session=sitzung)
+        ansicht.get_settings().set_enable_developer_extras(False)
+        ansicht.connect("decide-policy", self.entscheiden)
+        ansicht.load_uri(self.args.start)
+
+        fenster.set_child(ansicht)
+        fenster.maximize()
+        fenster.present()
+
+    def entscheiden(self, ansicht, entscheidung, typ):
+        if typ in (WebKit.PolicyDecisionType.NAVIGATION_ACTION,
+                   WebKit.PolicyDecisionType.NEW_WINDOW_ACTION):
+            uri = entscheidung.get_navigation_action().get_request().get_uri()
+            if not domain_erlaubt(uri, self.domains):
+                entscheidung.ignore()
+                return True
+            if typ == WebKit.PolicyDecisionType.NEW_WINDOW_ACTION:
+                # Neue Fenster im selben Fenster öffnen
+                ansicht.load_uri(uri)
+                entscheidung.ignore()
+                return True
+        return False
+
+
+def main():
+    p = argparse.ArgumentParser(description="Kinder-Stick Lernfenster")
+    p.add_argument("--titel", required=True)
+    p.add_argument("--start", required=True)
+    p.add_argument("--erlaubt", required=True, help="Kommagetrennte Domains")
+    args = p.parse_args()
+    if not domain_erlaubt(args.start, [d.strip().lower() for d in args.erlaubt.split(",")]):
+        print("Startadresse liegt nicht in den erlaubten Domains.", file=sys.stderr)
+        return 1
+    return Lernfenster(args).run([sys.argv[0]])
+
+
+if __name__ == "__main__":
+    sys.exit(main())

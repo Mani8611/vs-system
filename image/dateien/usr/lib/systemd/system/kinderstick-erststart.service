@@ -1,0 +1,13 @@
+[Unit]
+Description=Kinder-Stick: Kinder- und Elternkonto beim ersten Start anlegen
+ConditionPathExists=!/var/lib/kinderstick/.benutzer-angelegt
+After=local-fs.target
+Before=display-manager.service kinderstick-dienst.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/kinderstick/erststart.sh
+
+[Install]
+WantedBy=graphical.target

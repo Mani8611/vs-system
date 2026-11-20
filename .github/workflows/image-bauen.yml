@@ -1,0 +1,97 @@
+# Kinder-Stick: prüft den Code, baut das System-Image und ein fertiges Stick-Abbild.
+#  - Container-Image (für Updates der Sticks): ghcr.io/<besitzer>/kinderstick:latest  (nur main)
+#  - Stick-Abbild zum Schreiben mit Rufus/balenaEtcher: Download unter „Actions“ → Lauf → Artefakte
+name: Image bauen
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python-Syntax prüfen
+        run: |
+          python3 -m py_compile dienst/kinderstick_dienst.py
+          python3 -m py_compile image/dateien/usr/libexec/kinderstick/lernfenster
+      - name: JSON prüfen
+        run: |
+          python3 -m json.tool image/dateien/usr/share/kinderstick/apps.json > /dev/null
+          python3 -m json.tool image/dateien/etc/firefox/policies/policies.json > /dev/null
+      - name: Shell-Skripte prüfen
+        run: |
+          bash -n image/dateien/usr/libexec/kinderstick/erststart.sh
+          sh -n image/dateien/usr/libexec/kinderstick/kiosk-skript
+          bash -n werkzeuge/stick-schreiben.sh
+      - name: JavaScript-Syntax prüfen
+        run: for f in oberflaeche/*.js; do node --check "$f"; done
+      - name: Dienst im Testmodus starten und abfragen
+        run: |
+          KS_TESTMODUS=1 KS_DATEN="$RUNNER_TEMP/ks" KS_OBERFLAECHE=oberflaeche \
+            KS_APPS=image/dateien/usr/share/kinderstick/apps.json \
+            python3 dienst/kinderstick_dienst.py &
+          sleep 2
+          curl -fsS http://127.0.0.1:8411/api/status
+          curl -fsS -o /dev/null http://127.0.0.1:8411/index.html
+
+  bauen:
+    needs: pruefen
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Speicherplatz schaffen (Desktop-Images sind groß)
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      # Als root bauen, damit das Image im Root-Speicher liegt (für bootc-image-builder)
+      - name: Image bauen
+        run: sudo podman build -f image/Containerfile -t localhost/kinderstick:latest .
+
+      - name: In die Registry laden (nur main)
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | sudo podman login ghcr.io -u "${{ github.actor }}" --password-stdin
+          ziel="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/kinderstick:latest"
+          sudo podman tag localhost/kinderstick:latest "$ziel"
+          sudo podman push "$ziel"
+
+      # Fertiges Stick-Abbild (raw) – startet auf beliebigen UEFI-Laptops
+      - name: Stick-Abbild erzeugen (bootc-image-builder)
+        run: |
+          mkdir -p ausgabe
+          sudo podman run --rm --privileged --pull=newer \
+            --security-opt label=type:unconfined_t \
+            -v ./ausgabe:/output \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
+            quay.io/centos-bootc/bootc-image-builder:latest \
+            --type raw --rootfs btrfs \
+            localhost/kinderstick:latest
+          sudo chown -R "$USER" ausgabe
+          ls -lh ausgabe/image/
+
+      - name: Abbild komprimieren
+        run: |
+          xz -T0 -6 ausgabe/image/disk.raw
+          mv ausgabe/image/disk.raw.xz "kinderstick-$(date +%Y-%m-%d).raw.xz"
+          sha256sum kinderstick-*.raw.xz > kinderstick-pruefsumme.txt
+          ls -lh kinderstick-*
+
+      - name: Abbild als Artefakt bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: kinderstick-abbild
+          path: |
+            kinderstick-*.raw.xz
+            kinderstick-pruefsumme.txt
+          compression-level: 0
+          retention-days: 30

@@ -1,0 +1,4 @@
+# Kinder-Stick: Interne Laufwerke des Laptops (alles, was nicht per USB angeschlossen ist)
+# werden in der Oberfläche ausgeblendet und nicht eingehängt. Die Daten der Eltern bleiben unberührt.
+# Der Stick selbst hängt am USB-Bus und ist davon nicht betroffen.
+SUBSYSTEM=="block", ENV{ID_BUS}!="usb", ENV{UDISKS_IGNORE}="1"

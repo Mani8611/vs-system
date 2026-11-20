@@ -1,0 +1,12 @@
+# Kinder-Stick: Standardeinstellungen für alle Konten
+[org/gnome/desktop/input-sources]
+sources=[('xkb', 'at')]
+
+[org/gnome/desktop/screensaver]
+lock-enabled=false
+
+[org/gnome/desktop/session]
+idle-delay=uint32 900
+
+[org/gnome/desktop/interface]
+clock-format='24h'

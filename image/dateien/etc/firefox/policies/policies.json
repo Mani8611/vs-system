@@ -1,0 +1,34 @@
+{
+  "policies": {
+    "WebsiteFilter": {
+      "Block": ["<all_urls>"],
+      "Exceptions": ["http://127.0.0.1:8411/*"]
+    },
+    "Homepage": {
+      "URL": "http://127.0.0.1:8411/",
+      "Locked": true,
+      "StartPage": "homepage"
+    },
+    "DNSOverHTTPS": { "Enabled": false, "Locked": true },
+    "ExtensionSettings": { "*": { "installation_mode": "blocked" } },
+    "DisableDeveloperTools": true,
+    "BlockAboutConfig": true,
+    "BlockAboutAddons": true,
+    "BlockAboutProfiles": true,
+    "BlockAboutSupport": true,
+    "DisablePrivateBrowsing": true,
+    "DisableFirefoxAccounts": true,
+    "DisableFirefoxStudies": true,
+    "DisableTelemetry": true,
+    "DisablePocket": true,
+    "DisableProfileImport": true,
+    "DisableSetDesktopBackground": true,
+    "DisableFormHistory": true,
+    "DontCheckDefaultBrowser": true,
+    "NoDefaultBookmarks": true,
+    "OfferToSaveLogins": false,
+    "PasswordManagerEnabled": false,
+    "OverrideFirstRunPage": "",
+    "OverridePostUpdatePage": ""
+  }
+}

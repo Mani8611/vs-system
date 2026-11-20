@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eltern-Bereich</title>
+  <link rel="stylesheet" href="stil.css">
+</head>
+<body class="eltern">
+  <div class="seite">
+    <h1>Eltern-Bereich</h1>
+    <p class="unterzeile" id="unterzeile"></p>
+
+    <section class="karte">
+      <h2>Heute</h2>
+      <div class="kennzahl" id="heute-rest"></div>
+      <p class="hinweis" id="heute-text"></p>
+      <div class="knopf-reihe">
+        <button class="knopf zweit" type="button" data-bonus="15">+15 min</button>
+        <button class="knopf zweit" type="button" data-bonus="30">+30 min</button>
+        <button class="knopf zweit" type="button" data-bonus="60">+60 min</button>
+        <button class="knopf zweit" type="button" data-bonus="-15">−15 min</button>
+      </div>
+      <p class="meldung" id="bonus-meldung" aria-live="polite"></p>
+      <div class="tage" id="tage" aria-label="Nutzung der letzten 7 Tage"></div>
+    </section>
+
+    <section class="karte">
+      <h2>Zeiten</h2>
+      <div class="reihe">
+        <div class="feld">
+          <label for="limit_schultag">Minuten pro Tag (Mo–Fr)</label>
+          <input id="limit_schultag" type="number" min="0" max="600">
+        </div>
+        <div class="feld">
+          <label for="limit_wochenende">Minuten pro Tag (Sa, So)</label>
+          <input id="limit_wochenende" type="number" min="0" max="600">
+        </div>
+      </div>
+      <div class="reihe">
+        <div class="feld">
+          <label for="schlafen_von">Schlafenszeit ab</label>
+          <input id="schlafen_von" type="time">
+        </div>
+        <div class="feld">
+          <label for="schlafen_bis">Schlafenszeit bis</label>
+          <input id="schlafen_bis" type="time">
+        </div>
+      </div>
+      <h2>Freigegebene Programme</h2>
+      <div class="app-liste" id="app-liste"></div>
+      <h2>PIN ändern (optional)</h2>
+      <div class="reihe">
+        <div class="feld">
+          <label for="pin_neu">Neue PIN (4–8 Ziffern)</label>
+          <input id="pin_neu" type="password" inputmode="numeric" maxlength="8" autocomplete="off">
+        </div>
+      </div>
+      <button class="knopf" type="button" id="speichern">Speichern</button>
+      <p class="meldung" id="einst-meldung" aria-live="polite"></p>
+    </section>
+
+    <section class="karte">
+      <h2>WLAN</h2>
+      <div class="wlan-liste" id="wlan-liste"></div>
+      <div class="knopf-reihe">
+        <button class="knopf zweit" type="button" id="wlan-suchen">WLAN suchen</button>
+      </div>
+      <div id="wlan-verbinden-bereich" hidden>
+        <div class="feld">
+          <label for="wlan-passwort" id="wlan-label">Passwort</label>
+          <input id="wlan-passwort" type="password" autocomplete="off">
+        </div>
+        <button class="knopf" type="button" id="wlan-verbinden">Verbinden</button>
+      </div>
+      <p class="meldung" id="wlan-meldung" aria-live="polite"></p>
+    </section>
+
+    <section class="karte">
+      <h2>Fertig?</h2>
+      <div class="knopf-reihe">
+        <button class="knopf" type="button" id="zurueck">Zurück zum Kind</button>
+        <button class="knopf warnung" type="button" id="beenden">Kinder-Modus beenden (abmelden)</button>
+      </div>
+      <p class="hinweis">Nach dem Abmelden erscheint der Anmeldebildschirm. Dort können Sie sich mit dem Elternkonto anmelden oder den Laptop ausschalten und den Stick abziehen.</p>
+    </section>
+  </div>
+
+  <script src="vorschau.js"></script>
+  <script src="gemeinsam.js"></script>
+  <script src="eltern.js"></script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kinder-Stick einrichten</title>
+  <link rel="stylesheet" href="stil.css">
+</head>
+<body class="eltern">
+  <div class="seite">
+    <h1>Willkommen beim Kinder-Stick</h1>
+    <p class="unterzeile">Einmalige Einrichtung durch die Eltern – dauert etwa zwei Minuten.</p>
+
+    <form id="formular" novalidate>
+      <section class="karte">
+        <h2>1. Ihr Kind</h2>
+        <div class="reihe">
+          <div class="feld">
+            <label for="kind_name">Vorname</label>
+            <input id="kind_name" maxlength="30" autocomplete="off" required>
+          </div>
+          <div class="feld">
+            <label for="schulstufe">Schulstufe</label>
+            <select id="schulstufe">
+              <option value="1">1. Klasse Volksschule</option>
+              <option value="2">2. Klasse Volksschule</option>
+              <option value="3">3. Klasse Volksschule</option>
+              <option value="4">4. Klasse Volksschule</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="karte">
+        <h2>2. Eltern-PIN</h2>
+        <p class="hinweis">Mit der PIN öffnen Sie am Stick den Eltern-Bereich (Bonuszeit, Einstellungen, WLAN). Nicht dem Kind verraten.</p>
+        <div class="reihe">
+          <div class="feld">
+            <label for="pin">PIN (4–8 Ziffern)</label>
+            <input id="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="off">
+          </div>
+          <div class="feld">
+            <label for="pin2">PIN wiederholen</label>
+            <input id="pin2" type="password" inputmode="numeric" maxlength="8" autocomplete="off">
+          </div>
+        </div>
+      </section>
+
+      <section class="karte">
+        <h2>3. Elternpasswort</h2>
+        <p class="hinweis">Für das Elternkonto auf dem Stick (Anmeldung nach „Kinder-Modus beenden“). Mindestens 8 Zeichen.</p>
+        <div class="reihe">
+          <div class="feld">
+            <label for="passwort">Passwort</label>
+            <input id="passwort" type="password" autocomplete="new-password">
+          </div>
+          <div class="feld">
+            <label for="passwort2">Passwort wiederholen</label>
+            <input id="passwort2" type="password" autocomplete="new-password">
+          </div>
+        </div>
+      </section>
+
+      <section class="karte">
+        <h2>4. Zeiten</h2>
+        <div class="reihe">
+          <div class="feld">
+            <label for="limit_schultag">Minuten pro Tag (Mo–Fr)</label>
+            <input id="limit_schultag" type="number" min="0" max="600" value="60">
+          </div>
+          <div class="feld">
+            <label for="limit_wochenende">Minuten pro Tag (Sa, So)</label>
+            <input id="limit_wochenende" type="number" min="0" max="600" value="90">
+          </div>
+        </div>
+        <div class="reihe">
+          <div class="feld">
+            <label for="schlafen_von">Schlafenszeit ab</label>
+            <input id="schlafen_von" type="time" value="19:30">
+          </div>
+          <div class="feld">
+            <label for="schlafen_bis">Schlafenszeit bis</label>
+            <input id="schlafen_bis" type="time" value="07:00">
+          </div>
+        </div>
+        <p class="hinweis">Alles lässt sich später im Eltern-Bereich ändern.</p>
+      </section>
+
+      <div class="knopf-reihe">
+        <button class="knopf" type="submit">Einrichtung abschließen</button>
+      </div>
+      <p class="meldung" id="meldung" aria-live="polite"></p>
+    </form>
+  </div>
+
+  <script src="vorschau.js"></script>
+  <script src="gemeinsam.js"></script>
+  <script src="einrichtung.js"></script>
+</body>
+</html>

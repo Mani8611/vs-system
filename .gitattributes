@@ -1,0 +1,4 @@
+# Alle Textdateien mit Unix-Zeilenenden (wichtig für Shell-Skripte und das Image)
+* text=auto eol=lf
+*.pptx binary
+*.png binary

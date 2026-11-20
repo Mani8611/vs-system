@@ -1,0 +1,21 @@
+[Unit]
+Description=Kinder-Stick: lokale Steuerung (Zeitlimits, Apps, Eltern-PIN, Einrichtung)
+After=network.target kinderstick-erststart.service
+
+[Service]
+# Läuft als root: nötig für chpasswd (Elternpasswort), loginctl (Abmelden),
+# systemd-run (Apps im Kinderkonto starten), pkill (Apps beenden) und nmcli (WLAN).
+# Der Dienst lauscht ausschließlich auf 127.0.0.1.
+ExecStart=/usr/bin/python3 /usr/lib/kinderstick/kinderstick_dienst.py
+Restart=always
+RestartSec=2
+StateDirectory=kinderstick
+StateDirectoryMode=0700
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+
+[Install]
+WantedBy=multi-user.target

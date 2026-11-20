@@ -1,0 +1,58 @@
+[
+  {
+    "id": "gcompris",
+    "name": "Lernspiele",
+    "symbol": "🧩",
+    "beschreibung": "GCompris: rund 195 Lernaktivitäten für 2- bis 10-Jährige – Maus und Tastatur, Buchstaben, Zählen und Rechnen, Uhr und Geld, Memory, Puzzles, Labyrinthe, Tiere, Musik.",
+    "befehl": ["gcompris-qt"]
+  },
+  {
+    "id": "tuxpaint",
+    "name": "Malen",
+    "symbol": "🎨",
+    "beschreibung": "Tux Paint: Malprogramm für Kinder – Pinsel, Stempel, Formen, Text und Zaubereffekte, mit lustigen Geräuschen. Bilder bleiben gespeichert.",
+    "befehl": ["tuxpaint", "--fullscreen"]
+  },
+  {
+    "id": "anton",
+    "name": "ANTON lernen",
+    "symbol": "📚",
+    "beschreibung": "ANTON: Lern-App nach Lehrplan – Deutsch, Mathematik, Sachunterricht, Musik. Braucht Internet und ein (kostenloses) Konto.",
+    "befehl": ["/usr/libexec/kinderstick/lernfenster", "--titel", "ANTON", "--start", "https://anton.app/de/", "--erlaubt", "anton.app"]
+  },
+  {
+    "id": "klettres",
+    "name": "Buchstaben",
+    "symbol": "🔤",
+    "beschreibung": "KLettres: Buchstaben und Silben hören und eintippen, für Leseanfänger. Deutsche Sprachausgabe vorhanden (spricht teils Buchstabennamen statt Laute – vor Einsatz prüfen).",
+    "befehl": ["klettres"]
+  },
+  {
+    "id": "tuxmath",
+    "name": "Rechnen",
+    "symbol": "➕",
+    "beschreibung": "Tux Math: Rechenaufgaben als Spiel – Kometen mit Aufgaben abwehren, bevor sie landen. Schwierigkeit einstellbar.",
+    "befehl": ["tuxmath", "--fullscreen"]
+  },
+  {
+    "id": "tuxtype",
+    "name": "Tippen lernen",
+    "symbol": "⌨️",
+    "beschreibung": "Tux Typing: Tastatur spielerisch kennenlernen – herabfallende Fische mit dem richtigen Buchstaben fangen.",
+    "befehl": ["tuxtype"]
+  },
+  {
+    "id": "ktuberling",
+    "name": "Kartoffelmann",
+    "symbol": "🥔",
+    "beschreibung": "KTuberling: Kartoffelmännchen anziehen und Szenen gestalten – Teile werden beim Ablegen vorgelesen. Für die Kleinsten.",
+    "befehl": ["ktuberling"]
+  },
+  {
+    "id": "blinken",
+    "name": "Merkspiel",
+    "symbol": "🧠",
+    "beschreibung": "Blinken: Farben und Töne in der richtigen Reihenfolge nachspielen – trainiert das Gedächtnis.",
+    "befehl": ["blinken"]
+  }
+]
