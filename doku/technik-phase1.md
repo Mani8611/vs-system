@@ -43,7 +43,7 @@ Laptop startet vom Stick (Einmal-Boot-Menü)
 
 | # | Annahme | Prüfen |
 | --- | --- | --- |
-| 1 | Basis-Image `quay.io/fedora-ostree-desktops/silverblue:45` existiert und ist bootc-fähig | Bau im GitHub-Ablauf |
+| 1 | ✅ **Bestätigt (Bau 20.11.2026):** `quay.io/fedora-ostree-desktops/silverblue:45` existiert, alle Pakete installierbar, `bootc container lint` ohne Fehler | – |
 | 2 | ✅ **Geprüft 20.11.2026** (packages.fedoraproject.org): `gnome-kiosk-script-session`, `gcompris-qt`, `tuxpaint`, `tuxmath`, `tuxtype2` (nicht „tuxtype“), `klettres`, `ktuberling`, `blinken`, `webkitgtk6.0`, `espeak-ng` gibt es für Fedora 44. Offen: Befehlsnamen von gcompris-qt, tuxmath, klettres, ktuberling, blinken (bestätigt nur `tuxtype` aus Paket tuxtype2) sowie Option `--fullscreen` bei tuxmath | Bau, App-Start |
 | 3 | ✅ **Geprüft 20.11.2026:** Sitzungsdatei `/usr/share/wayland-sessions/gnome-kiosk-script-wayland.desktop`, Skriptpfad `~/.local/bin/gnome-kiosk-script` | – |
 | 4 | GDM meldet nur beim Hochfahren automatisch an; nach dem Abmelden erscheint der Anmeldebildschirm | Test „Kinder-Modus beenden“ |
@@ -57,7 +57,7 @@ Laptop startet vom Stick (Einmal-Boot-Menü)
 | 13 | KLettres: Laut offenem KDE-Fehlerbericht 262015 spricht die deutsche Stimme Buchstabennamen („Emm“) statt Laute („Mmm“) – für Leseanfänger in der Volksschule ungünstig | Mit Kind testen, ggf. Kachel ersetzen |
 | 14 | ✅ **Umgestellt 20.11.2026:** Image nutzt Fedora 45 (GNOME 51); alle Pakete laut packages.fedoraproject.org für F45 vorhanden. Offen: Tag `silverblue:45` auf quay.io | Bau |
 | 15 | bootc-image-builder erzeugt mit `--type raw --rootfs btrfs` ein Abbild, das auf fremden UEFI-Laptops mit Secure Boot startet; Root-Dateisystem wächst beim ersten Start auf die Stick-Größe | Bau, Test auf 64-GB-Stick (`df -h /`) |
-| 16 | Artefakt-Größe: komprimiertes Abbild (mehrere GB) lässt sich als GitHub-Artefakt hochladen (öffentliches Repo) | Bau |
+| 16 | ✅ **Bestätigt (Bau 20.11.2026):** Abbild `disk.raw` 15 GB (Root-Dateisystem btrfs 12,8 GiB), komprimiert 3,0 GB, als Artefakt hochgeladen. Passt auf Sticks ab 16 GB; ob das Root-Dateisystem auf größeren Sticks mitwächst, ist noch offen (#15) | – |
 | 12 | Uhrzeit: Laptop-Uhr (RTC) und Zeitzone stimmen; bei Windows-Laptops läuft die RTC oft in Ortszeit → Zeitlimits/Schlafenszeit verschoben, bis NTP synchronisiert | Test ohne/mit WLAN |
 
 ---
