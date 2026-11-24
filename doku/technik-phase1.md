@@ -49,10 +49,10 @@ Laptop startet vom Stick (Einmal-Boot-Menü)
 | 4 | GDM meldet nur beim Hochfahren automatisch an; nach dem Abmelden erscheint der Anmeldebildschirm | Test „Kinder-Modus beenden“ |
 | 5 | `systemd-run --user -M kind@.host` startet Apps sichtbar in der Kiosk-Sitzung (WAYLAND_DISPLAY im Benutzerdienst vorhanden) | App-Kachel antippen |
 | 6 | Apps erscheinen unter gnome-kiosk vor Firefox und nach dem Schließen ist Firefox wieder sichtbar | Test |
-| 7 | Firefox liest `/etc/firefox/policies/policies.json` (Fedora-Build) | `about:policies` im Elternkonto |
+| 7 | ✅ **Bestätigt (1. Test 24.11.2026):** Firefox liest `/etc/firefox/policies/policies.json` – aber die Ausnahme `http://127.0.0.1:8411/*` griff nicht (Firefox unterstützt **keine Ports** in Match-Patterns, MDN), daher „Blocked Page“ statt Oberfläche. Korrigiert auf `http://127.0.0.1/*` | Oberfläche erscheint nach Neubau |
 | 8 | Web Speech API (Vorlesen) funktioniert in Firefox mit speech-dispatcher + espeak-ng; deutsche Stimme | Kachel antippen |
 | 9 | `bootc-fetch-apply-updates.service` existiert im Silverblue-Image (sonst rpm-ostreed-automatic konfigurieren) | `systemctl cat bootc-fetch-apply-updates.service` |
-| 10 | `bootc install to-disk --generic-image --filesystem btrfs` erzeugt einen Stick, der auf fremden Laptops mit Secure Boot startet | Test auf ≥ 10 Laptops |
+| 10 | Teilweise bestätigt (1. Test 24.11.2026, privater Laptop, Secure Boot an): Stick startet, Kiosk-Sitzung mit Firefox erscheint. Im Bootmenü gab es keinen „USB“-Eintrag – gestartet über „Von EFI-Datei starten“ → `EFI/fedora/shimx64.efi`. Ursprünglich: `bootc install to-disk --generic-image --filesystem btrfs` erzeugt einen Stick, der auf fremden Laptops mit Secure Boot startet | Test auf ≥ 10 Laptops |
 | 11 | Lernfenster: ANTON funktioniert, obwohl nur Navigation (nicht Unterressourcen) auf anton.app beschränkt ist; Anmeldung bleibt gespeichert | Test |
 | 13 | KLettres: Laut offenem KDE-Fehlerbericht 262015 spricht die deutsche Stimme Buchstabennamen („Emm“) statt Laute („Mmm“) – für Leseanfänger in der Volksschule ungünstig | Mit Kind testen, ggf. Kachel ersetzen |
 | 14 | ✅ **Umgestellt 20.11.2026:** Image nutzt Fedora 45 (GNOME 51); alle Pakete laut packages.fedoraproject.org für F45 vorhanden. Offen: Tag `silverblue:45` auf quay.io | Bau |

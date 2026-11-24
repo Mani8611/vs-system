@@ -2,7 +2,7 @@
   "policies": {
     "WebsiteFilter": {
       "Block": ["<all_urls>"],
-      "Exceptions": ["http://127.0.0.1:8411/*"]
+      "Exceptions": ["http://127.0.0.1/*"]
     },
     "Homepage": {
       "URL": "http://127.0.0.1:8411/",
