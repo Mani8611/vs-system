@@ -60,6 +60,7 @@ STANDARD = {
     "schlafen_von": "19:30",
     "schlafen_bis": "07:00",
     "erlaubte_apps": None,       # None = alle Apps aus apps.json
+    "hintergrund": "standard",   # vom Kind gewählt (Datei in oberflaeche/hintergruende/)
 }
 
 MIME = {
@@ -336,6 +337,7 @@ def status():
             "rest_minuten": int(rest),
             "limit_minuten": int(gesamt),
             "schlafen_bis": einst["schlafen_bis"],
+            "hintergrund": einst.get("hintergrund", "standard"),
             "apps": [{"id": a["id"], "name": a["name"], "symbol": a.get("symbol", "")}
                      for a in erlaubte_apps()],
         }
@@ -466,6 +468,34 @@ def eltern_wlan_verbinden(d):
     return 200, {"ok": True}
 
 
+def hintergruende():
+    """Erlaubte Hintergründe: „standard“ plus alle SVG-Dateien in oberflaeche/hintergruende/."""
+    return {"standard"} | {p.stem for p in (OBERFLAECHE / "hintergruende").glob("*.svg")}
+
+
+def kind_hintergrund(d):
+    wahl = d.get("hintergrund")
+    if not isinstance(wahl, str) or wahl not in hintergruende():
+        return 400, {"fehler": "Diesen Hintergrund gibt es nicht."}
+    with sperre:
+        einst["hintergrund"] = wahl
+        speichern(EINST_DATEI, einst)
+    return 200, {"ok": True}
+
+
+def ausschalten():
+    """Computer ordnungsgemäß herunterfahren (Knopf auf der Startseite / im Eltern-Bereich)."""
+    def los():
+        with sperre:
+            speichern(NUTZ_DATEI, nutzung)
+        try:
+            ausfuehren(["systemctl", "poweroff"], zeit=10)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    threading.Timer(1.0, los).start()   # erst antworten, dann herunterfahren
+    return 200, {"ok": True}
+
+
 def kind_starten(d):
     with sperre:
         gesperrt, _, _, _ = zustand()
@@ -576,6 +606,10 @@ class Anfrage(BaseHTTPRequestHandler):
         try:
             if pfad == "/api/starten":
                 code, antwort = kind_starten(d)
+            elif pfad == "/api/hintergrund":
+                code, antwort = kind_hintergrund(d)
+            elif pfad == "/api/ausschalten":
+                code, antwort = ausschalten()
             elif pfad == "/api/einrichtung":
                 code, antwort = einrichten(d)
             elif pfad == "/api/eltern/anmelden":

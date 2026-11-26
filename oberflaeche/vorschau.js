@@ -127,7 +127,14 @@
         return {
           eingerichtet: z.eingerichtet, kind_name: z.kind_name, gesperrt: s.gesperrt, grund: s.grund,
           rest_minuten: Math.floor(s.rest), limit_minuten: s.gesamt, schlafen_bis: z.schlafen_bis, apps: erlaubt(),
+          hintergrund: z.hintergrund || "standard",
         };
+      case "/api/hintergrund":
+        z.hintergrund = d.hintergrund;
+        speichern();
+        return { ok: true };
+      case "/api/ausschalten":
+        return { ok: true };
       case "/api/einrichtung":
         if (z.eingerichtet) fehler(409, "Der Stick ist bereits eingerichtet.");
         if (!/^\d{4,8}$/.test(d.pin || "")) fehler(400, "Die Eltern-PIN muss aus 4 bis 8 Ziffern bestehen.");

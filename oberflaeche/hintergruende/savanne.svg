@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <!-- Eigene Zeichnung: Sonnenuntergang in der Savanne -->
+  <defs>
+    <linearGradient id="himmel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F26B3A"/><stop offset="0.45" stop-color="#F9A03F"/><stop offset="0.75" stop-color="#FDD77A"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#himmel)"/>
+  <circle cx="800" cy="560" r="230" fill="#FFE9A8"/>
+  <circle cx="800" cy="560" r="180" fill="#FFF3C9"/>
+  <path d="M0 600 C250 540 450 580 700 560 S1250 520 1600 580 L1600 900 L0 900 Z" fill="#C7683A"/>
+  <path d="M0 680 C300 640 600 700 900 660 S1400 640 1600 680 L1600 900 L0 900 Z" fill="#8E4A2B"/>
+  <path d="M0 780 C400 740 1000 800 1600 760 L1600 900 L0 900 Z" fill="#5E3220"/>
+  <g fill="#3B1F14" stroke="#3B1F14">
+    <rect x="236" y="470" width="16" height="230" stroke="none"/>
+    <path d="M244 480 L180 430 M244 480 L310 420" stroke-width="10" fill="none"/>
+    <ellipse cx="244" cy="420" rx="170" ry="38" stroke="none"/><ellipse cx="160" cy="430" rx="80" ry="24" stroke="none"/><ellipse cx="330" cy="415" rx="90" ry="26" stroke="none"/>
+    <rect x="1316" y="520" width="12" height="180" stroke="none"/>
+    <path d="M1322 530 L1270 490 M1322 530 L1375 485" stroke-width="8" fill="none"/>
+    <ellipse cx="1322" cy="480" rx="130" ry="30" stroke="none"/><ellipse cx="1390" cy="475" rx="70" ry="20" stroke="none"/>
+    <rect x="1086" y="590" width="7" height="90" stroke="none"/><ellipse cx="1090" cy="585" rx="60" ry="15" stroke="none"/>
+  </g>
+  <g fill="none" stroke="#5E3220" stroke-width="5" stroke-linecap="round">
+    <path d="M520 200 q15 -14 30 0 q15 -14 30 0"/><path d="M610 250 q12 -11 24 0 q12 -11 24 0"/><path d="M1040 180 q15 -14 30 0 q15 -14 30 0"/>
+  </g>
+  <g stroke="#3B1F14" stroke-width="4" stroke-linecap="round">
+    <path d="M60 900 l10 -60 M90 900 l-6 -50 M120 900 l12 -70 M1460 900 l-10 -60 M1500 900 l8 -55 M1540 900 l-12 -70"/>
+  </g>
+</svg>

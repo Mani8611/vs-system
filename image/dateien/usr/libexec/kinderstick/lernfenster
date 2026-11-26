@@ -23,6 +23,17 @@ button.fertig { font-size: 20px; font-weight: bold; padding: 8px 24px; }
 """
 
 
+FEHLERSEITE = """<!doctype html><html lang="de"><meta charset="utf-8">
+<body style="font-family:Cantarell,sans-serif;background:#EEF5F0;color:#1B4332;display:flex;
+flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center">
+<div style="font-size:120px">📶</div>
+<h1 style="font-size:40px;margin:16px 0 8px">Kein Internet</h1>
+<p style="font-size:24px;max-width:700px">Dieses Programm braucht Internet.<br>
+Bitte Mama oder Papa: im Eltern-Bereich (Schloss unten rechts) das WLAN verbinden.</p>
+<p style="font-size:20px;color:#5C6B73">Tippe oben auf „Fertig – zurück“.</p>
+</body></html>"""
+
+
 def domain_erlaubt(uri, domains):
     """True, wenn die Adresse https ist und zu einer erlaubten Domain gehört."""
     if uri in ("about:blank", ""):
@@ -63,11 +74,19 @@ class Lernfenster(Gtk.Application):
         ansicht = WebKit.WebView(network_session=sitzung)
         ansicht.get_settings().set_enable_developer_extras(False)
         ansicht.connect("decide-policy", self.entscheiden)
+        ansicht.connect("load-failed", self.laden_fehlgeschlagen)
         ansicht.load_uri(self.args.start)
 
         fenster.set_child(ansicht)
-        fenster.maximize()
+        fenster.fullscreen()
         fenster.present()
+
+    def laden_fehlgeschlagen(self, ansicht, ereignis, uri, fehler):
+        """Kindgerechte Meldung statt technischer Fehlerseite (z. B. kein WLAN)."""
+        if fehler.matches(WebKit.network_error_quark(), WebKit.NetworkError.CANCELLED):
+            return False
+        ansicht.load_alternate_html(FEHLERSEITE, uri, None)
+        return True
 
     def entscheiden(self, ansicht, entscheidung, typ):
         if typ in (WebKit.PolicyDecisionType.NAVIGATION_ACTION,

@@ -23,7 +23,31 @@
     <p id="sperre-text"></p>
   </section>
 
+  <div class="unten-links">
+    <button id="aus-knopf" class="rund-knopf" type="button" title="Computer ausschalten" aria-label="Computer ausschalten">⏻</button>
+    <button id="hg-knopf" class="rund-knopf" type="button" title="Hintergrund aussuchen" aria-label="Hintergrund aussuchen">🖼️</button>
+  </div>
   <button id="eltern-knopf" class="eltern-knopf" type="button" title="Für Mama und Papa" aria-label="Eltern-Bereich">🔒</button>
+
+  <dialog id="aus-dialog" aria-labelledby="aus-titel">
+    <h2 class="pin-titel" id="aus-titel">Computer ausschalten?</h2>
+    <div class="dialog-knoepfe">
+      <button class="knopf" type="button" id="aus-ja">Ja, ausschalten</button>
+      <button class="knopf zweit" type="button" id="aus-nein">Nein</button>
+    </div>
+  </dialog>
+
+  <dialog id="hg-dialog" class="hg-dialog" aria-labelledby="hg-titel">
+    <h2 class="pin-titel" id="hg-titel">Such dir einen Hintergrund aus</h2>
+    <div class="hg-galerie" id="hg-galerie"></div>
+    <button class="pin-abbrechen" id="hg-schliessen" type="button">Schließen</button>
+  </dialog>
+
+  <div id="aus-hinweis" class="aus-hinweis" hidden>
+    <div class="sperre-symbol">👋</div>
+    <h2>Tschüss!</h2>
+    <p>Der Computer schaltet sich aus. Danach kannst du den Stick abziehen.</p>
+  </div>
 
   <dialog id="pin-dialog" aria-labelledby="pin-titel">
     <h2 class="pin-titel" id="pin-titel">Eltern-PIN</h2>

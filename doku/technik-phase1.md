@@ -47,7 +47,7 @@ Laptop startet vom Stick (Einmal-Boot-Menü)
 | 2 | ✅ **Geprüft 20.11.2026** (packages.fedoraproject.org): `gnome-kiosk-script-session`, `gcompris-qt`, `tuxpaint`, `tuxmath`, `tuxtype2` (nicht „tuxtype“), `klettres`, `ktuberling`, `blinken`, `webkitgtk6.0`, `espeak-ng` gibt es für Fedora 44. Offen: Befehlsnamen von gcompris-qt, tuxmath, klettres, ktuberling, blinken (bestätigt nur `tuxtype` aus Paket tuxtype2) sowie Option `--fullscreen` bei tuxmath | Bau, App-Start |
 | 3 | ✅ **Geprüft 20.11.2026:** Sitzungsdatei `/usr/share/wayland-sessions/gnome-kiosk-script-wayland.desktop`, Skriptpfad `~/.local/bin/gnome-kiosk-script` | – |
 | 4 | GDM meldet nur beim Hochfahren automatisch an; nach dem Abmelden erscheint der Anmeldebildschirm | Test „Kinder-Modus beenden“ |
-| 5 | `systemd-run --user -M kind@.host` startet Apps sichtbar in der Kiosk-Sitzung (WAYLAND_DISPLAY im Benutzerdienst vorhanden) | App-Kachel antippen |
+| 5 | ✅ **Bestätigt (2. Test 25.11.2026):** Oberfläche erscheint, Kacheln starten Programme. Programme öffneten sich aber **nicht im Vollbild** → `/usr/share/gnome-kiosk/window-config.ini` (`match-window-type=normal`, `set-fullscreen=true`), Lernfenster `fullscreen()`. ANTON: „Temporary failure in name resolution“ = kein Internet (WLAN nicht verbunden?) → Lernfenster zeigt jetzt eine kindgerechte Meldung. Ursprünglich: `systemd-run --user -M kind@.host` startet Apps sichtbar in der Kiosk-Sitzung (WAYLAND_DISPLAY im Benutzerdienst vorhanden) | App-Kachel antippen |
 | 6 | Apps erscheinen unter gnome-kiosk vor Firefox und nach dem Schließen ist Firefox wieder sichtbar | Test |
 | 7 | ✅ **Bestätigt (1. Test 24.11.2026):** Firefox liest `/etc/firefox/policies/policies.json` – aber die Ausnahme `http://127.0.0.1:8411/*` griff nicht (Firefox unterstützt **keine Ports** in Match-Patterns, MDN), daher „Blocked Page“ statt Oberfläche. Korrigiert auf `http://127.0.0.1/*` | Oberfläche erscheint nach Neubau |
 | 8 | Web Speech API (Vorlesen) funktioniert in Firefox mit speech-dispatcher + espeak-ng; deutsche Stimme | Kachel antippen |
@@ -97,3 +97,13 @@ Dann im Browser `http://127.0.0.1:8411/` öffnen. Im Testmodus werden keine Syst
 - Image signieren (cosign) und Updates nur signiert annehmen.
 - Registry: Image öffentlich machen oder Zugangsdaten für `bootc upgrade` auf dem Stick hinterlegen (GHCR-Pakete sind standardmäßig privat).
 - Lizenzhinweise (GPL-Quellen).
+
+---
+
+## Änderungen nach dem 2. Hardware-Test (26.11.2026)
+
+- **Ausschalten:** Knopf ⏻ unten links auf der Startseite (mit Rückfrage) und im Eltern-Bereich → `POST /api/ausschalten` → `systemctl poweroff`.
+- **Hintergrund-Galerie:** Knopf 🖼️ unten links; eigene SVG-Szenen in `oberflaeche/hintergruende/` (Eispalast, Savanne, Unterwasser, Weltraum, Regenbogen) → `POST /api/hintergrund`, gespeichert in `einstellungen.json`. **Keine Disney- oder andere geschützte Figuren** (Urheber-/Markenrecht – für ein Produkt nur mit Lizenz).
+- **Vollbild:** gnome-kiosk-Fensterregeln (`image/dateien/usr/share/gnome-kiosk/window-config.ini`).
+- **Start über EFI/BOOT (Stufe 1):** `image/efi-direktstart.sh` entfernt `fbx64.efi` aus dem Fallback-Pfad und legt `grubx64.efi` daneben → Stick erscheint als normaler USB-Eintrag, kein Firmware-Eintrag „Fedora“. Kontrolle im Bau-Protokoll („EFI-Bereich des Abbilds anzeigen“). **Ungetestet.**
+- **Immer vom Stick starten (Stufe 2):** nur über die Startreihenfolge im BIOS des jeweiligen Laptops („USB zuerst“) – setzt Stufe 1 voraus.

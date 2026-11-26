@@ -159,4 +159,15 @@ $("beenden").addEventListener("click", async () => {
   }
 });
 
+$("ausschalten").addEventListener("click", async () => {
+  if (!confirm("Computer jetzt ausschalten?")) return;
+  try {
+    await api("/api/ausschalten");
+    sessionStorage.removeItem("elternToken");
+    document.body.textContent = "Der Computer schaltet sich aus. Danach kann der Stick abgezogen werden.";
+  } catch (e) {
+    alert(e.message);
+  }
+});
+
 laden().catch((e) => meldung($("einst-meldung"), e.message, "fehler"));

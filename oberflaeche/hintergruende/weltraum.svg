@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <!-- Eigene Zeichnung: Weltraum mit Planeten und Rakete -->
+  <defs>
+    <radialGradient id="all" cx="0.3" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#3B2A7A"/><stop offset="1" stop-color="#0A0A2A"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#all)"/>
+  <g fill="#FFFFFF">
+    <circle cx="80" cy="120" r="2"/><circle cx="200" cy="400" r="3"/><circle cx="350" cy="90" r="2"/><circle cx="460" cy="700" r="2"/>
+    <circle cx="610" cy="250" r="3"/><circle cx="720" cy="820" r="2"/><circle cx="880" cy="140" r="2"/><circle cx="960" cy="600" r="3"/>
+    <circle cx="1100" cy="300" r="2"/><circle cx="1230" cy="780" r="2"/><circle cx="1380" cy="420" r="3"/><circle cx="1520" cy="120" r="2"/>
+    <circle cx="1560" cy="640" r="2"/><circle cx="40" cy="820" r="3"/><circle cx="560" cy="480" r="2"/><circle cx="1000" cy="40" r="2"/>
+  </g>
+  <circle cx="1240" cy="260" r="130" fill="#F2A65A"/>
+  <path d="M1150 200 C1220 230 1300 230 1360 210" stroke="#E07B39" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <path d="M1130 290 C1210 320 1290 320 1365 300" stroke="#E07B39" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <ellipse cx="1240" cy="260" rx="230" ry="45" fill="none" stroke="#FFD8A8" stroke-width="14" transform="rotate(-15 1240 260)"/>
+  <circle cx="260" cy="700" r="90" fill="#7FB3FF"/><circle cx="230" cy="680" r="18" fill="#5C93E6"/><circle cx="290" cy="730" r="12" fill="#5C93E6"/>
+  <circle cx="1450" cy="720" r="40" fill="#E6E6F0"/><circle cx="1440" cy="710" r="8" fill="#C4C4D4"/>
+  <g transform="translate(720 420) rotate(35)">
+    <path d="M0 -110 C40 -70 45 20 35 70 L-35 70 C-45 20 -40 -70 0 -110 Z" fill="#F4F4F8"/>
+    <circle cx="0" cy="-20" r="20" fill="#7FB3FF" stroke="#5C6B73" stroke-width="5"/>
+    <path d="M-35 30 L-70 90 L-35 70 Z M35 30 L70 90 L35 70 Z" fill="#F26B5B"/>
+    <path d="M-20 70 L0 140 L20 70 Z" fill="#FFB627"/>
+  </g>
+</svg>

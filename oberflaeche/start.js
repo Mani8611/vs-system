@@ -19,6 +19,7 @@ async function aktualisieren() {
   }
 
   el("gruss").textContent = `Hallo ${s.kind_name}!`;
+  hintergrundSetzen(s.hintergrund);
 
   // Restzeit
   const rest = s.rest_minuten;
@@ -82,6 +83,69 @@ async function starten(app) {
   }
 }
 
+// ---------- Hintergrund-Galerie ----------
+// Eigene, frei verwendbare Bilder (oberflaeche/hintergruende/). Der Dienst prüft die Auswahl.
+const HINTERGRUENDE = [
+  { id: "standard", name: "Grün" },
+  { id: "eispalast", name: "Eispalast" },
+  { id: "savanne", name: "Savanne" },
+  { id: "unterwasser", name: "Unterwasser" },
+  { id: "weltraum", name: "Weltraum" },
+  { id: "regenbogen", name: "Regenbogen" },
+];
+
+function hintergrundSetzen(id) {
+  document.body.dataset.hintergrund = HINTERGRUENDE.some((h) => h.id === id) ? id : "standard";
+}
+
+function galerieBauen() {
+  for (const h of HINTERGRUENDE) {
+    const knopf = document.createElement("button");
+    knopf.type = "button";
+    knopf.className = "hg-wahl";
+    const bild = document.createElement("span");
+    bild.className = "hg-bild";
+    bild.dataset.hintergrund = h.id;
+    const name = document.createElement("span");
+    name.textContent = h.name;
+    knopf.append(bild, name);
+    knopf.addEventListener("click", async () => {
+      vorlesen(h.name);
+      hintergrundSetzen(h.id);
+      el("hg-dialog").close();
+      try {
+        await api("/api/hintergrund", { hintergrund: h.id });
+      } catch (e) {
+        aktualisieren();
+      }
+    });
+    el("hg-galerie").append(knopf);
+  }
+}
+
+el("hg-knopf").addEventListener("click", () => {
+  vorlesen("Such dir einen Hintergrund aus");
+  el("hg-dialog").showModal();
+});
+el("hg-schliessen").addEventListener("click", () => el("hg-dialog").close());
+
+// ---------- Ausschalten ----------
+el("aus-knopf").addEventListener("click", () => {
+  vorlesen("Computer ausschalten?");
+  el("aus-dialog").showModal();
+});
+el("aus-nein").addEventListener("click", () => el("aus-dialog").close());
+el("aus-ja").addEventListener("click", async () => {
+  el("aus-dialog").close();
+  try {
+    await api("/api/ausschalten");
+    vorlesen("Tschüss!");
+    el("aus-hinweis").hidden = false;
+  } catch (e) {
+    vorlesen(e.message);
+  }
+});
+
 // ---------- PIN-Dialog für den Eltern-Bereich ----------
 let pin = "";
 
@@ -130,5 +194,6 @@ el("eltern-knopf").addEventListener("click", () => {
 el("pin-abbrechen").addEventListener("click", () => el("pin-dialog").close());
 
 pinTastenBauen();
+galerieBauen();
 aktualisieren();
 setInterval(aktualisieren, 15000);

@@ -42,6 +42,10 @@ COPY image/dateien/ /
 COPY dienst/kinderstick_dienst.py /usr/lib/kinderstick/kinderstick_dienst.py
 COPY oberflaeche/ /usr/share/kinderstick/oberflaeche/
 
+# Stick startet über den Standard-Pfad EFI/BOOT ohne Firmware-Eintrag (Erklärung im Skript)
+COPY image/efi-direktstart.sh /tmp/efi-direktstart.sh
+RUN bash /tmp/efi-direktstart.sh && rm -f /tmp/efi-direktstart.sh
+
 RUN chmod 0755 /usr/libexec/kinderstick/* \
     && ln -sf ../usr/share/zoneinfo/Europe/Vienna /etc/localtime \
     && dconf update \

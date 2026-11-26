@@ -31,6 +31,7 @@ jobs:
           bash -n image/dateien/usr/libexec/kinderstick/erststart.sh
           sh -n image/dateien/usr/libexec/kinderstick/kiosk-skript
           bash -n werkzeuge/stick-schreiben.sh
+          bash -n image/efi-direktstart.sh
       - name: JavaScript-Syntax prüfen
         run: for f in oberflaeche/*.js; do node --check "$f"; done
       - name: Dienst im Testmodus starten und abfragen
@@ -78,6 +79,27 @@ jobs:
             localhost/kinderstick:latest
           sudo chown -R "$(id -u):$(id -g)" ausgabe
           ls -lh ausgabe/image/
+
+      # Kontrolle: Startdateien im EFI-Bereich des fertigen Abbilds (EFI/BOOT soll grubx64.efi
+      # enthalten und kein fbx64.efi) – nur Anzeige, bricht den Bau nicht ab
+      - name: EFI-Bereich des Abbilds anzeigen
+        continue-on-error: true
+        run: |
+          geraet=$(sudo losetup -P -f --show ausgabe/image/disk.raw)
+          mkdir -p esp
+          for teil in "${geraet}"p*; do
+            if [ "$(sudo blkid -o value -s TYPE "$teil")" = "vfat" ]; then
+              sudo mount -o ro "$teil" esp
+              sudo find esp -type f | sort
+              if sudo test -f esp/EFI/BOOT/grubx64.efi && ! sudo test -f esp/EFI/BOOT/fbx64.efi; then
+                echo "EFI/BOOT startet direkt (kein Fallback)."
+              else
+                echo "::warning::EFI/BOOT enthält noch fbx64.efi oder kein grubx64.efi – Start über EFI/BOOT wird nicht klappen."
+              fi
+              sudo umount esp
+            fi
+          done
+          sudo losetup -d "$geraet"
 
       - name: Abbild komprimieren
         run: |

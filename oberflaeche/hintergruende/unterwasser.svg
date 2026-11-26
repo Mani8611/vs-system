@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <!-- Eigene Zeichnung: Unterwasserwelt -->
+  <defs>
+    <linearGradient id="wasser" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4FC3E8"/><stop offset="1" stop-color="#0B3A6E"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#wasser)"/>
+  <g fill="#FFFFFF" opacity="0.12">
+    <polygon points="300,0 420,0 260,900 120,900"/><polygon points="800,0 880,0 760,900 640,900"/><polygon points="1250,0 1350,0 1300,900 1150,900"/>
+  </g>
+  <path d="M0 800 C300 760 600 820 900 780 S1400 770 1600 800 L1600 900 L0 900 Z" fill="#E9CF8F"/>
+  <g fill="none" stroke-width="18" stroke-linecap="round">
+    <path d="M150 820 C120 740 190 690 150 600 S170 480 140 420" stroke="#2E9E5B"/>
+    <path d="M210 820 C240 750 180 700 220 630 S200 540 230 500" stroke="#3DBA6E"/>
+    <path d="M1420 810 C1390 730 1460 680 1420 590 S1440 470 1410 410" stroke="#2E9E5B"/>
+    <path d="M1480 810 C1510 740 1450 690 1490 620" stroke="#3DBA6E"/>
+  </g>
+  <g fill="#F26B5B"><circle cx="700" cy="790" r="34"/><circle cx="740" cy="770" r="26"/><circle cx="665" cy="770" r="22"/></g>
+  <g stroke-width="3">
+    <ellipse cx="520" cy="360" rx="60" ry="34" fill="#FFB627" stroke="#E08A00"/><polygon points="575,360 625,325 625,395" fill="#FFB627" stroke="#E08A00"/>
+    <ellipse cx="1080" cy="520" rx="48" ry="28" fill="#FF8FB1" stroke="#E0688E"/><polygon points="1125,520 1170,492 1170,548" fill="#FF8FB1" stroke="#E0688E"/>
+  </g>
+  <circle cx="495" cy="352" r="7" fill="#1F2933"/><circle cx="1058" cy="513" r="6" fill="#1F2933"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="3" opacity="0.7">
+    <circle cx="450" cy="300" r="10"/><circle cx="430" cy="250" r="7"/><circle cx="445" cy="210" r="5"/>
+    <circle cx="1010" cy="460" r="9"/><circle cx="995" cy="410" r="6"/><circle cx="900" cy="200" r="12"/><circle cx="300" cy="560" r="8"/>
+  </g>
+</svg>
