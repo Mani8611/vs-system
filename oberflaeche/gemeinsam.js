@@ -3,7 +3,7 @@
 
 /** Ruft den lokalen Dienst auf. Ohne daten: GET, mit daten: POST (JSON). */
 async function api(pfad, daten) {
-  if (window.KS_VORSCHAU_API) return window.KS_VORSCHAU_API(pfad, daten || {});   // nur Vorschau (file://)
+  if (window.KS_VORSCHAU_API) return window.KS_VORSCHAU_API(pfad, daten || {}, daten !== undefined);   // nur Vorschau (file://)
   const optionen = daten === undefined
     ? {}
     : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(daten) };

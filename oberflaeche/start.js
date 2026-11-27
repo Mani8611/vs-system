@@ -192,8 +192,11 @@ el("aus-knopf").addEventListener("click", () => {
 el("aus-nein").addEventListener("click", () => el("aus-dialog").close());
 el("aus-ja").addEventListener("click", async () => {
   el("aus-dialog").close();
+  el("aus-fehler").hidden = true;
   try {
-    await api("/api/ausschalten");
+    // Mit Daten = POST. Test 6 (27.11.2026): ohne {} ging ein GET hinaus, der Dienst antwortete
+    // „Nicht gefunden“ und der Fehler wurde nur „vorgelesen“ (Vorlesen ist aus) – nichts geschah.
+    await api("/api/ausschalten", {});
     vorlesen("Tschüss!");
     el("aus-hinweis").hidden = false;
     ausschaltenBeobachten((text) => {
@@ -201,7 +204,10 @@ el("aus-ja").addEventListener("click", async () => {
       el("aus-fehler").hidden = false;
     });
   } catch (e) {
-    vorlesen(e.message);
+    el("aus-hinweis").hidden = false;
+    el("aus-fehler").textContent = "Das Ausschalten hat nicht geklappt: " + e.message;
+    el("aus-fehler").hidden = false;
+    setTimeout(() => { el("aus-hinweis").hidden = true; }, 10000);
   }
 });
 
@@ -251,6 +257,18 @@ el("eltern-knopf").addEventListener("click", () => {
   el("pin-dialog").showModal();
 });
 el("pin-abbrechen").addEventListener("click", () => el("pin-dialog").close());
+
+// PIN auch über die Tastatur (Ziffernreihe und Nummernblock, auch bei ausgeschaltetem NumLock)
+el("pin-dialog").addEventListener("keydown", (e) => {
+  let taste = null;
+  if (/^[0-9]$/.test(e.key)) taste = e.key;
+  else if (/^Numpad[0-9]$/.test(e.code)) taste = e.code.slice(-1);
+  else if (e.key === "Backspace" || e.key === "Delete") taste = "⌫";
+  else if (e.key === "Enter") taste = "OK";
+  if (taste === null) return;   // Escape schließt den Dialog wie gewohnt
+  e.preventDefault();
+  pinTaste(taste);
+});
 
 pinTastenBauen();
 galerieBauen();

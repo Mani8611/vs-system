@@ -136,8 +136,10 @@
   }
 
   // Ersatz für den lokalen Dienst (gleiche Antworten wie dienst/kinderstick_dienst.py)
-  window.KS_VORSCHAU_API = async function (pfad, d) {
+  window.KS_VORSCHAU_API = async function (pfad, d, post) {
     await new Promise((r) => setTimeout(r, 100));
+    // Wie der Dienst: nur diese Adressen gibt es als GET, alles andere nur als POST
+    if (!post && !["/api/status", "/api/lautstaerke"].includes(pfad)) fehler(404, "Nicht gefunden.");
     zeitZaehlen();
     const s = zustand();
     switch (pfad) {

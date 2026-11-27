@@ -144,3 +144,9 @@ Ergebnis Test 5: insgesamt gut. Probleme: Ausschalten tat wieder nichts (Startse
 - **Ausschalten in Stufen:** `poweroff --check-inhibitors=no` → `start poweroff.target --job-mode=replace-irreversibly` → `poweroff --force` → `poweroff --force --force`. Die nächste Stufe kommt jeweils, wenn der Rechner nach 20 s noch läuft; vorher läuft `sync`. Fehlertexte stehen in `/api/status` als `ausschalt_fehler`. Startseite und Eltern-Bereich zeigen sie nach 25 s rot an, mit dem Hinweis, notfalls den Ein-Knopf lange zu drücken.
 - **Kamera:** Firefox-Einstellung `media.webrtc.camera.allow-pipewire = false` (gesperrt). Vermutung: Firefox fragte die Kamera über das PipeWire-Portal an, im Kiosk gibt es keinen Rückfrage-Dialog, also kam die Ablehnung. Mit `false` greift Firefox direkt über V4L2 zu. Die Fehlermeldung im Spiel nennt jetzt den Fehlernamen.
 - **Ungetestet:** ob GTK den Eingabebereich beibehält (er wird alle 2 s neu gesetzt) und ob mutter das Verkleinern der Leiste annimmt; ob die Leiste über GCompris (Qt-Vollbild) und Firefox-Kiosk oben bleibt; welche Ausschalt-Stufe wirkt.
+
+## Änderungen nach dem 6. Hardware-Test (27.11.2026)
+
+- **Ausschalten – eigentliche Ursache:** Startseite und Eltern-Bereich riefen `api("/api/ausschalten")` ohne Daten auf. `api()` schickt dann einen GET, den gibt es für diese Adresse nicht → „Nicht gefunden“. Auf der Startseite wurde der Fehler nur „vorgelesen“ (Vorlesen ist aus), im Eltern-Bereich kam ein `alert` mit der Adresse als Überschrift. Behoben mit `api(…, {})`. Fehler erscheinen jetzt sichtbar. Die Vorschau unterscheidet jetzt GET und POST wie der Dienst (nur `/api/status` und `/api/lautstaerke` als GET).
+- **Eltern-Bereich:** Ausschalten durch zweimaliges Tippen statt `confirm()`.
+- **PIN-Eingabe über die Tastatur:** Ziffernreihe und Nummernblock (auch bei ausgeschaltetem NumLock über `e.code`), Rücktaste/Entf löscht, Enter = OK.

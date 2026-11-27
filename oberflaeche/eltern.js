@@ -274,10 +274,23 @@ $("beenden").addEventListener("click", async () => {
   }
 });
 
+// Zweimal tippen statt confirm(): Firefox zeigt dort die Adresse 127.0.0.1:8411 als Überschrift
+let ausschaltenBereit = null;
 $("ausschalten").addEventListener("click", async () => {
-  if (!confirm("Computer jetzt ausschalten?")) return;
+  const knopf = $("ausschalten");
+  if (!ausschaltenBereit) {
+    knopf.textContent = "Wirklich ausschalten? Nochmal tippen";
+    ausschaltenBereit = setTimeout(() => {
+      knopf.textContent = "Computer ausschalten";
+      ausschaltenBereit = null;
+    }, 5000);
+    return;
+  }
+  clearTimeout(ausschaltenBereit);
+  ausschaltenBereit = null;
+  knopf.textContent = "Computer ausschalten";
   try {
-    await api("/api/ausschalten");
+    await api("/api/ausschalten", {});   // mit Daten = POST (Test 6: GET → „Nicht gefunden“)
     sessionStorage.removeItem("elternToken");
     document.body.textContent = "Der Computer schaltet sich aus. Danach kann der Stick abgezogen werden.";
     ausschaltenBeobachten((text) => {
