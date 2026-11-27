@@ -18,6 +18,25 @@ async function api(pfad, daten) {
   return json;
 }
 
+/** Nach „Ausschalten“: fragt alle 5 s beim Dienst nach. Läuft der Rechner nach 25 s noch und
+ *  meldet der Dienst einen Fehler, bekommt zeigen() den Text (zum Weitergeben an die Entwicklung). */
+function ausschaltenBeobachten(zeigen) {
+  const beginn = Date.now();
+  let gezeigt = "";
+  const timer = setInterval(async () => {
+    try {
+      const s = await api("/api/status");
+      const sekunden = (Date.now() - beginn) / 1000;
+      if (sekunden > 25 && s.ausschalt_fehler && s.ausschalt_fehler !== gezeigt) {
+        gezeigt = s.ausschalt_fehler;
+        zeigen("Das Ausschalten klappt gerade nicht. Notfalls den Ein-Knopf am Laptop lange drücken.\n"
+          + "Meldung für die Entwicklung: " + s.ausschalt_fehler);
+      }
+      if (sekunden > 180) clearInterval(timer);
+    } catch (e) { /* Dienst beendet – der Computer fährt herunter */ }
+  }, 5000);
+}
+
 /** Vorlesen ist ausgeschaltet (Test 26.11.2026: die Stimme klingt nicht gut).
  *  Zum Wiedereinschalten VORLESEN_AKTIV auf true setzen – später ggf. als Eltern-Einstellung. */
 const VORLESEN_AKTIV = false;

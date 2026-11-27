@@ -187,6 +187,7 @@ body.kind:not([data-hintergrund="standard"]) .sperre {
 }
 .aus-hinweis h2 { font-size: 48px; margin: 24px 0 8px; color: var(--gruen); }
 .aus-hinweis p { font-size: 26px; margin: 0; color: var(--grau); }
+.aus-hinweis .aus-fehler { margin-top: 28px; max-width: 900px; font-size: 18px; color: var(--koralle); white-space: pre-line; }
 
 /* ---------- Lautstärke ---------- */
 .ton-dialog { width: min(560px, calc(100% - 32px)); }

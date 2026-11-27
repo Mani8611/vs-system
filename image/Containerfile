@@ -18,12 +18,14 @@ FROM quay.io/fedora-ostree-desktops/silverblue:${FEDORA_VERSION}
 #    Programme der Oberfläche (oberflaeche/apps/). Tux Paint, Tux Math, Tux Typing, KLettres,
 #    KTuberling, Blinken wurden nach dem Test am 26.11.2026 entfernt (nicht kindgerecht / ging nicht).
 #    Vorlesen ist ausgeschaltet, daher kein speech-dispatcher/espeak-ng mehr.
-#  - python3-gobject, gtk4, webkitgtk6.0: „Lernfenster“ für freigegebene Lern-Webseiten (ANTON)
+#  - python3-gobject, python3-cairo, gtk4, webkitgtk6.0: Lernfenster (ANTON) und Kopfleiste über
+#    Lernspielen/Netflix/Disney+ (cairo: eingeklappt nimmt die Leiste nur auf der Lasche Klicks an)
 #  - glibc-langpack-de: deutsche Sprache
 RUN dnf -y install \
         gnome-kiosk-script-session \
         gcompris-qt \
         python3-gobject \
+        python3-cairo \
         gtk4 \
         webkitgtk6.0 \
         glibc-langpack-de \

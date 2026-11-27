@@ -10,6 +10,7 @@ const KsApp = {
   /** Startet den Rahmen; wartet auf die erste Antwort des Dienstes. */
   async start(appId) {
     document.getElementById("zurueck").addEventListener("click", () => KsApp.zurueck());
+    KsApp.zeitAnlegen();
     await KsApp.pruefen(appId);
     setInterval(() => KsApp.pruefen(appId), 15000);
   },
@@ -22,7 +23,35 @@ const KsApp = {
         return;
       }
       KsApp.schulstufe = Math.min(4, Math.max(1, Number(s.schulstufe) || 1));
+      KsApp.zeitZeigen(s.rest_minuten, s.limit_minuten);
     } catch (e) { /* Dienst kurz nicht erreichbar – weiterspielen */ }
+  },
+
+  /** Restzeit rechts in der Kopfleiste – wie bei Lernspielen, ANTON, Netflix und Disney+. */
+  zeitAnlegen() {
+    const rechts = document.querySelector(".app-kopf-rechts");
+    if (!rechts) return;
+    const zeit = document.createElement("span");
+    zeit.className = "app-zeit";
+    zeit.id = "app-zeit";
+    zeit.hidden = true;
+    const text = document.createElement("span");
+    const balken = document.createElement("span");
+    balken.className = "app-zeit-balken";
+    balken.append(document.createElement("i"));
+    zeit.append(text, balken);
+    rechts.append(zeit);
+  },
+
+  zeitZeigen(rest, limit) {
+    const zeit = document.getElementById("app-zeit");
+    if (!zeit) return;
+    zeit.hidden = !(limit > 0);
+    if (zeit.hidden) return;
+    zeit.firstChild.textContent = "⏳ noch " + minutenText(rest);
+    zeit.querySelector("i").style.width = Math.min(100, (rest / limit) * 100) + "%";
+    zeit.classList.toggle("knapp", rest > 5 && rest <= 10);
+    zeit.classList.toggle("fast-aus", rest <= 5);
   },
 
   /** Bild (JPEG als data:-Adresse) als Hintergrund der Startseite speichern. */

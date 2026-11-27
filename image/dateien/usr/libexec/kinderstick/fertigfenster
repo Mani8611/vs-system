@@ -1,16 +1,20 @@
 #!/usr/bin/python3
 """Kinder-Stick – „Fertig“-Fenster für Programme ohne eigenen Zurück-Weg.
 
-Startet ein Programm und zeigt dazu einen kleinen, immer sichtbaren Knopf „⬅ Fertig“ oben links
-(Fensterregel in /usr/share/gnome-kiosk/window-config.ini, Titel „Kinderstick-Fertig“).
-Ein Druck auf den Knopf beendet das Programm, das Kind ist wieder auf der Startseite.
+Startet ein Programm und legt die Kopfleiste des Sticks (kopfleiste.py: „⬅ Fertig“ links,
+Restzeit rechts, ▲ Einklappen) über den oberen Rand des Programms. Die Leiste ist ein eigenes,
+immer oben liegendes Fenster über die ganze Breite (Fensterregel in
+/usr/share/gnome-kiosk/window-config.ini, Titel „Kinderstick-Leiste“).
+Eingeklappt bleibt nur die Lasche ▼ in der Mitte sichtbar und anklickbar: das Fenster wird
+durchsichtig und nimmt Klicks nur noch auf der Lasche an, der Rest geht ans Programm darunter.
+Ein Druck auf „Fertig“ beendet das Programm, das Kind ist wieder auf der Startseite.
 
 Zwei Arten:
-  fertigfenster --video netflix --start https://www.netflix.com/login
+  fertigfenster --titel Netflix --video netflix --start https://www.netflix.com/login
       Streamingdienst: eigener Firefox (eigenes Profil, Kiosk-Modus). Netflix und Disney+ brauchen
       den Kopierschutz Widevine – Firefox lädt ihn selbst nach (Richtlinie EncryptedMediaExtensions),
       WebKitGTK kann das nicht. Erreichbare Seiten regelt /etc/firefox/policies/policies.json.
-  fertigfenster -- gcompris-qt --fullscreen --enable-kioskmode …
+  fertigfenster --titel Lernspiele -- gcompris-qt --fullscreen --enable-kioskmode …
       Beliebiges Programm (GCompris hat im Kiosk-Modus keinen eigenen Beenden-Knopf).
 
 Beenden: Knopf „Fertig“, Ende des Programms oder SIGTERM (der Dienst beendet bei Zeitende alle
@@ -28,41 +32,97 @@ import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, Gio, GLib, Gtk  # noqa: E402
 
-TITEL = "Kinderstick-Fertig"
+sys.path.insert(0, "/usr/lib/kinderstick")
+import kopfleiste  # noqa: E402
+
+try:   # Eingabebereich des Fensters (eingeklappt nur die Lasche anklickbar) braucht cairo-Regionen
+    import cairo
+    gi.require_foreign("cairo")
+except (ImportError, ValueError):
+    cairo = None
+
+TITEL = "Kinderstick-Leiste"
+HOEHE = 76          # ausgeklappt (Höhe der Leiste)
+HOEHE_LASCHE = 44   # eingeklappt
 CSS = """
-window.fertig-fenster { background: #1B4332; }
-button.fertig { font-size: 22px; font-weight: bold; padding: 10px 24px; border-radius: 16px;
-                background: #FFB627; color: #1B4332; }
+window.ks-oben { background: #1B4332; }
+window.ks-oben.eingeklappt { background: transparent; }
 """
 
 
 class Fertigfenster(Gtk.Application):
-    def __init__(self, befehl):
+    def __init__(self, titel, befehl):
         super().__init__(application_id="at.kinderstick.Fertigfenster",
                          flags=Gio.ApplicationFlags.NON_UNIQUE)
+        self.titel = titel
+        self.eingeklappt = False
         # Eigene Prozessgruppe: beim Beenden werden auch Kindprozesse des Programms erfasst
         self.programm = subprocess.Popen(befehl, start_new_session=True)
 
     def do_activate(self):
+        kopfleiste.stil_laden()
         stil = Gtk.CssProvider()
         stil.load_from_string(CSS)
         Gtk.StyleContext.add_provider_for_display(
-            Gdk.Display.get_default(), stil, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+            Gdk.Display.get_default(), stil, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION + 1)
+
+        # Breite des Bildschirms (logische Pixel); die Fensterregel legt das Fenster auf x=0, y=0
+        self.breite = 1920
+        monitore = Gdk.Display.get_default().get_monitors()
+        if monitore.get_n_items():
+            self.breite = monitore.get_item(0).get_geometry().width
 
         fenster = Gtk.ApplicationWindow(application=self, title=TITEL)
-        fenster.add_css_class("fertig-fenster")
+        fenster.add_css_class("ks-oben")
         fenster.set_decorated(False)
-        fenster.set_resizable(False)
-        knopf = Gtk.Button(label="⬅  Fertig")
-        knopf.add_css_class("fertig")
-        knopf.connect("clicked", lambda *_: self.beenden())
-        fenster.set_child(knopf)
-        # Knopf erst zeigen, wenn das Programm Zeit hatte, sein Fenster zu öffnen – sonst liegt er
+        fenster.set_default_size(self.breite, HOEHE)
+        self.fenster = fenster
+
+        self.leiste = kopfleiste.Kopfleiste(self.titel, self.beenden, self.klappen)
+        self.leiste.set_size_request(self.breite, HOEHE)
+        self.lasche = kopfleiste.lasche(self.klappen)
+        if cairo is None:
+            self.leiste.klappen.set_visible(False)   # ohne Eingabebereich nicht einklappen
+        inhalt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        inhalt.append(self.leiste)
+        inhalt.append(self.lasche)
+        fenster.set_child(inhalt)
+
+        # Leiste erst zeigen, wenn das Programm Zeit hatte, sein Fenster zu öffnen – sonst liegt sie
         # kurz über der Startseite (Test 27.11.2026: verdeckte den Namen des Kindes)
         GLib.timeout_add(2500, lambda: (fenster.present(), False)[1])
 
         GLib.timeout_add_seconds(1, self.programm_pruefen)
+        GLib.timeout_add_seconds(2, self.eingabe_bereich)   # falls GTK den Bereich zurücksetzt
         GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, self.beenden)
+
+    def klappen(self, ein):
+        self.eingeklappt = ein
+        self.leiste.set_visible(not ein)
+        self.lasche.set_visible(ein)
+        if ein:
+            self.fenster.add_css_class("eingeklappt")
+            self.fenster.set_default_size(self.breite, HOEHE_LASCHE)
+        else:
+            self.fenster.remove_css_class("eingeklappt")
+            self.fenster.set_default_size(self.breite, HOEHE)
+        GLib.timeout_add(150, lambda: (self.eingabe_bereich(), False)[1])
+
+    def eingabe_bereich(self):
+        """Eingeklappt nimmt das Fenster nur auf der Lasche Klicks an, sonst überall."""
+        oberflaeche = self.fenster.get_surface()
+        if cairo is None or oberflaeche is None:
+            return True
+        breite = self.fenster.get_width() or self.breite
+        hoehe = self.fenster.get_height() or HOEHE
+        rechteck = cairo.RectangleInt(0, 0, breite, hoehe)
+        if self.eingeklappt:
+            ok, grenzen = self.lasche.compute_bounds(self.fenster)
+            if ok and grenzen.get_width() > 0:
+                rechteck = cairo.RectangleInt(int(grenzen.get_x()), int(grenzen.get_y()),
+                                              int(grenzen.get_width()) + 1, int(grenzen.get_height()) + 1)
+        oberflaeche.set_input_region(cairo.Region(rechteck))
+        return True
 
     def programm_pruefen(self):
         if self.programm.poll() is not None:     # Programm wurde geschlossen
@@ -85,6 +145,7 @@ class Fertigfenster(Gtk.Application):
 
 def main():
     p = argparse.ArgumentParser(description="Kinder-Stick Fertig-Fenster")
+    p.add_argument("--titel", default="", help="Name des Programms in der Leiste")
     p.add_argument("--video", help="Streamingdienst, Kurzname (z. B. netflix)")
     p.add_argument("--start", help="Startadresse des Streamingdienstes (https)")
     p.add_argument("befehl", nargs=argparse.REMAINDER, help="-- Programm und Optionen")
@@ -104,7 +165,7 @@ def main():
             print("Kein Programm angegeben.", file=sys.stderr)
             return 1
 
-    app = Fertigfenster(befehl)
+    app = Fertigfenster(args.titel, befehl)
     try:
         return app.run([sys.argv[0]])
     finally:

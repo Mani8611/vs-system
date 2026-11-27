@@ -24,10 +24,10 @@
     { id: "buchstaben", name: "Buchstaben", symbol: "🔤", seite: "apps/buchstaben.html" },
     { id: "merkspiel", name: "Merkspiel", symbol: "🧠", seite: "apps/merkspiel.html" },
     { id: "kamera", name: "Kamera", symbol: "📷", seite: "apps/kamera.html" },
-    { id: "gcompris", name: "Lernspiele", symbol: "🧩", beschreibung: "GCompris: rund 195 Lernaktivitäten für 2- bis 10-Jährige – Buchstaben, Zählen, Uhr und Geld, Puzzles, Labyrinthe, Tiere, Musik. Auf dem Stick nur die Schwierigkeitsstufen passend zur Klasse, im Vollbild mit „Fertig“-Knopf oben links." },
+    { id: "gcompris", name: "Lernspiele", symbol: "🧩", beschreibung: "GCompris: rund 195 Lernaktivitäten für 2- bis 10-Jährige – Buchstaben, Zählen, Uhr und Geld, Puzzles, Labyrinthe, Tiere, Musik. Auf dem Stick nur die Schwierigkeitsstufen passend zur Klasse, im Vollbild mit Kopfleiste (Fertig, Restzeit, einklappbar)." },
     { id: "anton", name: "ANTON", symbol: "📚", beschreibung: "ANTON: Lern-App nach Lehrplan – Deutsch, Mathematik, Sachunterricht. Die Klasse wird in ANTON gewählt. Braucht Internet." },
-    { id: "netflix", name: "Netflix", symbol: "🎬", standard_aus: true, beschreibung: "Netflix im Kinderprofil, im Vollbild mit „Fertig“-Knopf oben links. Eigenes Abo nötig; Erwachsenen-Profile in Netflix mit PIN sperren. Erscheint erst, wenn die Eltern die Kachel freischalten." },
-    { id: "disney", name: "Disney+", symbol: "🏰", standard_aus: true, beschreibung: "Disney+ im Kinderprofil, im Vollbild mit „Fertig“-Knopf oben links. Eigenes Abo nötig; Erwachsenen-Profile in Disney+ mit PIN sperren. Erscheint erst, wenn die Eltern die Kachel freischalten." },
+    { id: "netflix", name: "Netflix", symbol: "🎬", standard_aus: true, beschreibung: "Netflix im Kinderprofil, im Vollbild mit Kopfleiste (Fertig, Restzeit, einklappbar). Eigenes Abo nötig; Erwachsenen-Profile in Netflix mit PIN sperren. Erscheint erst, wenn die Eltern die Kachel freischalten." },
+    { id: "disney", name: "Disney+", symbol: "🏰", standard_aus: true, beschreibung: "Disney+ im Kinderprofil, im Vollbild mit Kopfleiste (Fertig, Restzeit, einklappbar). Eigenes Abo nötig; Erwachsenen-Profile in Disney+ mit PIN sperren. Erscheint erst, wenn die Eltern die Kachel freischalten." },
   ];
   const STANDARD = {
     eingerichtet: false, kind_name: "", schulstufe: 1, pin: "",

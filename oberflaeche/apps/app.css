@@ -22,6 +22,13 @@ body.kind-app {
 }
 .kopf-knopf:active { transform: scale(0.94); }
 .sterne { background: rgba(255, 255, 255, 0.18); border-radius: 18px; padding: 8px 18px; }
+/* Restzeit rechts in der Kopfleiste */
+.app-zeit { display: flex; align-items: center; gap: 10px; font-size: 20px; margin-left: 8px; }
+.app-zeit[hidden] { display: none; }
+.app-zeit-balken { width: 140px; height: 14px; border-radius: 7px; background: rgba(255, 255, 255, 0.25); overflow: hidden; }
+.app-zeit-balken i { display: block; height: 100%; border-radius: 7px; background: #6BCB77; transition: width 0.5s; }
+.app-zeit.knapp i { background: var(--gelb); }
+.app-zeit.fast-aus i { background: var(--koralle); }
 
 .app-inhalt { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; overflow: auto; }
 

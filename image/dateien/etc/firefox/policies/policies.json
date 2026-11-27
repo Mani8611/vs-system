@@ -22,7 +22,8 @@
     },
     "RequestedLocales": ["de"],
     "Preferences": {
-      "intl.accept_languages": { "Value": "de-AT, de-DE, de, en", "Status": "locked" }
+      "intl.accept_languages": { "Value": "de-AT, de-DE, de, en", "Status": "locked" },
+      "media.webrtc.camera.allow-pipewire": { "Value": false, "Status": "locked" }
     },
     "Permissions": {
       "Camera": { "Allow": ["http://127.0.0.1:8411"], "BlockNewRequests": true, "Locked": true },

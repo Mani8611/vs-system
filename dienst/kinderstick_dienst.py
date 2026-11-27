@@ -364,6 +364,7 @@ def status():
             "eigene_hintergruende": [{"id": i, "url": f"/eigene-hintergruende/{i}.jpg"}
                                      for i in eigene_hintergruende()],
             "schulstufe": einst["schulstufe"],
+            "ausschalt_fehler": ausschalt_fehler,
             "uhrzeit": datetime.now().strftime("%H:%M"),   # Uhrzeit am Stick (Kontrolle bei der Einrichtung)
             "apps": [{"id": a["id"], "name": a["name"], "symbol": a.get("symbol", "")}
                      for a in erlaubte_apps()],
@@ -657,23 +658,52 @@ def kind_hintergrund(d):
     return 200, {"ok": True}
 
 
+ausschalten_laeuft = False
+ausschalt_fehler = ""   # letzte Fehlermeldung beim Ausschalten – zeigt die Oberfläche an
+
+# Stufen beim Ausschalten. Die nächste kommt nur, wenn der Rechner 20 s später noch läuft – beim
+# echten Herunterfahren wird dieser Dienst früh beendet, die Schleife endet dann von selbst.
+# Tests 27.11.2026: schon „poweroff --check-inhibitors=no“ und „start poweroff.target“ taten
+# sichtbar nichts (Fehlermeldung unbekannt) – darum zusätzlich die erzwungenen Wege.
+AUSSCHALT_STUFEN = [
+    ["systemctl", "poweroff", "--check-inhibitors=no"],
+    ["systemctl", "start", "poweroff.target", "--job-mode=replace-irreversibly"],
+    ["systemctl", "poweroff", "--force"],             # Programme beenden, Laufwerke aushängen, aus
+    ["systemctl", "poweroff", "--force", "--force"],  # sofort aus (Daten vorher mit sync gesichert)
+]
+
+
 def ausschalten():
-    """Computer ordnungsgemäß herunterfahren (Knopf auf der Startseite / im Eltern-Bereich)."""
+    """Computer herunterfahren (Knopf auf der Startseite / im Eltern-Bereich)."""
+    global ausschalten_laeuft, ausschalt_fehler
+
     def los():
+        global ausschalten_laeuft, ausschalt_fehler
         with sperre:
             speichern(NUTZ_DATEI, nutzung)
-        # Test 27.11.2026: „systemctl poweroff“ tat nichts – die laufende Kinder-Sitzung (GNOME)
-        # hält Sperren gegen das Ausschalten. Darum Sperren übergehen; notfalls direkt das Ziel starten.
-        for befehl in (["systemctl", "poweroff", "--check-inhibitors=no"],
-                       ["systemctl", "start", "poweroff.target", "--job-mode=replace-irreversibly"]):
+        for befehl in AUSSCHALT_STUFEN:
+            os.sync()
             try:
-                r = ausfuehren(befehl, zeit=15)
-                if r.returncode == 0:
-                    return
-                print("Ausschalten fehlgeschlagen:", " ".join(befehl), r.stderr.strip(), flush=True)
+                r = ausfuehren(befehl, zeit=20)
+                if r.returncode != 0:
+                    ausschalt_fehler = (f"{' '.join(befehl[1:])}: "
+                                        f"{(r.stderr or r.stdout or '').strip() or r.returncode}")[:300]
             except (OSError, subprocess.TimeoutExpired) as fehler:
-                print("Ausschalten fehlgeschlagen:", " ".join(befehl), fehler, flush=True)
-    threading.Timer(1.0, los).start()   # erst antworten, dann herunterfahren
+                ausschalt_fehler = f"{' '.join(befehl[1:])}: {fehler}"[:300]
+            if ausschalt_fehler:
+                print("Ausschalten:", ausschalt_fehler, flush=True)
+            time.sleep(20)
+        ausschalt_fehler = ausschalt_fehler or "Der Computer hat auf keinen Ausschalt-Befehl reagiert."
+        ausschalten_laeuft = False   # erneuter Versuch möglich
+
+    with sperre:
+        if ausschalten_laeuft:
+            return 200, {"ok": True}
+        ausschalten_laeuft = True
+        ausschalt_fehler = ""
+    zeitgeber = threading.Timer(1.0, los)   # erst antworten, dann herunterfahren
+    zeitgeber.daemon = True
+    zeitgeber.start()
     return 200, {"ok": True}
 
 

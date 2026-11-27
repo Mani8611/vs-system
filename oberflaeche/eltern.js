@@ -280,6 +280,13 @@ $("ausschalten").addEventListener("click", async () => {
     await api("/api/ausschalten");
     sessionStorage.removeItem("elternToken");
     document.body.textContent = "Der Computer schaltet sich aus. Danach kann der Stick abgezogen werden.";
+    ausschaltenBeobachten((text) => {
+      const p = document.createElement("p");
+      p.style.color = "#C0392B";
+      p.style.whiteSpace = "pre-line";
+      p.textContent = text;
+      document.body.append(p);
+    });
   } catch (e) {
     alert(e.message);
   }

@@ -196,6 +196,10 @@ el("aus-ja").addEventListener("click", async () => {
     await api("/api/ausschalten");
     vorlesen("Tschüss!");
     el("aus-hinweis").hidden = false;
+    ausschaltenBeobachten((text) => {
+      el("aus-fehler").textContent = text;
+      el("aus-fehler").hidden = false;
+    });
   } catch (e) {
     vorlesen(e.message);
   }

@@ -36,9 +36,12 @@ async function kameraAn() {
     await video.play();
     return true;
   } catch (e) {
+    // Fehlername mit anzeigen – hilft bei der Fehlersuche (Test 27.11.2026: NotAllowedError,
+    // vermutlich Firefox-Kamerazugriff über PipeWire ohne Rückfrage-Dialog im Kiosk)
+    const name = e && e.name ? ` (${e.name})` : "";
     $("kamera-fehler").textContent = e && e.name === "NotAllowedError"
-      ? "Die Kamera darf gerade nicht benutzt werden. Frag Mama oder Papa."
-      : "Dieser Computer hat keine Kamera, oder sie ist gerade ausgeschaltet.";
+      ? "Die Kamera lässt sich gerade nicht einschalten." + name
+      : "Dieser Computer hat keine Kamera, oder sie ist gerade ausgeschaltet." + name;
     zeigen("keine-kamera");
     return false;
   }
