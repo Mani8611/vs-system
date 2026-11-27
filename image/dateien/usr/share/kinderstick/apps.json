@@ -3,7 +3,7 @@
     "id": "malen",
     "name": "Malen",
     "symbol": "🎨",
-    "beschreibung": "Eigenes Malprogramm: Pinsel, Ausfüllen, Stempel, Radierer, Rückgängig. Bilder können aufgehoben werden.",
+    "beschreibung": "Eigenes Malprogramm: Pinsel, Ausfüllen, Stempel, Radierer, Rückgängig. Bilder können aufgehoben und als Hintergrund verwendet werden.",
     "seite": "apps/malen.html"
   },
   {
@@ -28,11 +28,18 @@
     "seite": "apps/merkspiel.html"
   },
   {
+    "id": "kamera",
+    "name": "Kamera",
+    "symbol": "📷",
+    "beschreibung": "Eigenes Kameraspiel: Seifenblasen mit den Händen platzen lassen und lustige Fotos im Zauberspiegel. Fotos bleiben auf dem Stick, nichts geht ins Internet. Braucht eine eingebaute Kamera.",
+    "seite": "apps/kamera.html"
+  },
+  {
     "id": "gcompris",
     "name": "Lernspiele",
     "symbol": "🧩",
-    "beschreibung": "GCompris: rund 195 Lernaktivitäten für 2- bis 10-Jährige. Auf dem Stick nur die Schwierigkeitsstufen passend zur Klasse.",
-    "befehl": ["gcompris-qt", "--fullscreen", "--enable-kioskmode", "--locale", "de_DE.UTF-8"],
+    "beschreibung": "GCompris: rund 195 Lernaktivitäten für 2- bis 10-Jährige. Auf dem Stick nur die Schwierigkeitsstufen passend zur Klasse. Beenden mit dem Knopf „⬅ Fertig“ oben links.",
+    "befehl": ["/usr/libexec/kinderstick/fertigfenster", "--", "gcompris-qt", "--fullscreen", "--enable-kioskmode", "--locale", "de_DE.UTF-8"],
     "optionen_nach_klasse": {
       "1": ["--difficulty", "1-3"],
       "2": ["--difficulty", "2-4"],
@@ -52,7 +59,7 @@
     "name": "Netflix",
     "symbol": "🎬",
     "beschreibung": "Netflix im Kinderprofil (eigenes Abo nötig). Erwachsenen-Profile bitte in Netflix mit einer Profil-PIN sperren. Zählt zur Bildschirmzeit.",
-    "befehl": ["/usr/libexec/kinderstick/videofenster", "--name", "netflix", "--start", "https://www.netflix.com/"],
+    "befehl": ["/usr/libexec/kinderstick/fertigfenster", "--video", "netflix", "--start", "https://www.netflix.com/login"],
     "standard_aus": true
   },
   {
@@ -60,7 +67,7 @@
     "name": "Disney+",
     "symbol": "🏰",
     "beschreibung": "Disney+ im Kinderprofil (eigenes Abo nötig). Erwachsenen-Profile bitte in Disney+ mit einer Profil-PIN sperren. Zählt zur Bildschirmzeit.",
-    "befehl": ["/usr/libexec/kinderstick/videofenster", "--name", "disney", "--start", "https://www.disneyplus.com/"],
+    "befehl": ["/usr/libexec/kinderstick/fertigfenster", "--video", "disney", "--start", "https://www.disneyplus.com/login"],
     "standard_aus": true
   }
 ]

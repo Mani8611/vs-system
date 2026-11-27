@@ -1,0 +1,115 @@
+#!/usr/bin/python3
+"""Kinder-Stick – „Fertig“-Fenster für Programme ohne eigenen Zurück-Weg.
+
+Startet ein Programm und zeigt dazu einen kleinen, immer sichtbaren Knopf „⬅ Fertig“ oben links
+(Fensterregel in /usr/share/gnome-kiosk/window-config.ini, Titel „Kinderstick-Fertig“).
+Ein Druck auf den Knopf beendet das Programm, das Kind ist wieder auf der Startseite.
+
+Zwei Arten:
+  fertigfenster --video netflix --start https://www.netflix.com/login
+      Streamingdienst: eigener Firefox (eigenes Profil, Kiosk-Modus). Netflix und Disney+ brauchen
+      den Kopierschutz Widevine – Firefox lädt ihn selbst nach (Richtlinie EncryptedMediaExtensions),
+      WebKitGTK kann das nicht. Erreichbare Seiten regelt /etc/firefox/policies/policies.json.
+  fertigfenster -- gcompris-qt --fullscreen --enable-kioskmode …
+      Beliebiges Programm (GCompris hat im Kiosk-Modus keinen eigenen Beenden-Knopf).
+
+Beenden: Knopf „Fertig“, Ende des Programms oder SIGTERM (der Dienst beendet bei Zeitende alle
+Apps mit pkill) – in jedem Fall wird auch das gestartete Programm beendet.
+"""
+import argparse
+import os
+import re
+import signal
+import subprocess
+import sys
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+from gi.repository import Gdk, Gio, GLib, Gtk  # noqa: E402
+
+TITEL = "Kinderstick-Fertig"
+CSS = """
+window.fertig-fenster { background: #1B4332; }
+button.fertig { font-size: 22px; font-weight: bold; padding: 10px 24px; border-radius: 16px;
+                background: #FFB627; color: #1B4332; }
+"""
+
+
+class Fertigfenster(Gtk.Application):
+    def __init__(self, befehl):
+        super().__init__(application_id="at.kinderstick.Fertigfenster",
+                         flags=Gio.ApplicationFlags.NON_UNIQUE)
+        # Eigene Prozessgruppe: beim Beenden werden auch Kindprozesse des Programms erfasst
+        self.programm = subprocess.Popen(befehl, start_new_session=True)
+
+    def do_activate(self):
+        stil = Gtk.CssProvider()
+        stil.load_from_string(CSS)
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(), stil, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+        fenster = Gtk.ApplicationWindow(application=self, title=TITEL)
+        fenster.add_css_class("fertig-fenster")
+        fenster.set_decorated(False)
+        fenster.set_resizable(False)
+        knopf = Gtk.Button(label="⬅  Fertig")
+        knopf.add_css_class("fertig")
+        knopf.connect("clicked", lambda *_: self.beenden())
+        fenster.set_child(knopf)
+        # Knopf erst zeigen, wenn das Programm Zeit hatte, sein Fenster zu öffnen – sonst liegt er
+        # kurz über der Startseite (Test 27.11.2026: verdeckte den Namen des Kindes)
+        GLib.timeout_add(2500, lambda: (fenster.present(), False)[1])
+
+        GLib.timeout_add_seconds(1, self.programm_pruefen)
+        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, self.beenden)
+
+    def programm_pruefen(self):
+        if self.programm.poll() is not None:     # Programm wurde geschlossen
+            self.quit()
+            return False
+        return True
+
+    def beenden(self, *_):
+        if self.programm.poll() is None:
+            try:
+                os.killpg(self.programm.pid, signal.SIGTERM)
+                self.programm.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                os.killpg(self.programm.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        self.quit()
+        return False
+
+
+def main():
+    p = argparse.ArgumentParser(description="Kinder-Stick Fertig-Fenster")
+    p.add_argument("--video", help="Streamingdienst, Kurzname (z. B. netflix)")
+    p.add_argument("--start", help="Startadresse des Streamingdienstes (https)")
+    p.add_argument("befehl", nargs=argparse.REMAINDER, help="-- Programm und Optionen")
+    args = p.parse_args()
+
+    if args.video:
+        if not re.fullmatch(r"[a-z]{2,20}", args.video) or not (args.start or "").startswith("https://"):
+            print("Ungültiger Name oder Startadresse.", file=sys.stderr)
+            return 1
+        profil = os.path.expanduser(f"~/.local/share/kinderstick/video-{args.video}")
+        os.makedirs(profil, mode=0o700, exist_ok=True)
+        # Eigener Firefox-Prozess, unabhängig vom Kiosk-Firefox der Kinder-Oberfläche
+        befehl = ["firefox", "--new-instance", "--profile", profil, "--kiosk", args.start]
+    else:
+        befehl = args.befehl[1:] if args.befehl[:1] == ["--"] else args.befehl
+        if not befehl:
+            print("Kein Programm angegeben.", file=sys.stderr)
+            return 1
+
+    app = Fertigfenster(befehl)
+    try:
+        return app.run([sys.argv[0]])
+    finally:
+        app.beenden()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

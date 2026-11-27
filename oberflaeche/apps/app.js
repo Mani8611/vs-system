@@ -25,6 +25,11 @@ const KsApp = {
     } catch (e) { /* Dienst kurz nicht erreichbar – weiterspielen */ }
   },
 
+  /** Bild (JPEG als data:-Adresse) als Hintergrund der Startseite speichern. */
+  alsHintergrund(bild) {
+    return api("/api/hintergrund-aus-bild", { bild });
+  },
+
   zurueck() {
     location.href = "../index.html";
   },

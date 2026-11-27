@@ -194,12 +194,27 @@ $("neu-ja").addEventListener("click", () => {
 // ---------- Bilder aufheben und wieder öffnen ----------
 function bilderLaden() { return KsApp.laden("bilder", []); }
 
+function hinweisZeigen(text) {
+  $("gespeichert").textContent = text;
+  $("gespeichert").hidden = false;
+  setTimeout(() => { $("gespeichert").hidden = true; }, 1800);
+}
+
 $("speichern").addEventListener("click", () => {
   const bilder = bilderLaden();
   bilder.unshift(leinwand.toDataURL("image/jpeg", 0.8));
   KsApp.speichern("bilder", bilder.slice(0, MAX_BILDER));
-  $("gespeichert").hidden = false;
-  setTimeout(() => { $("gespeichert").hidden = true; }, 1500);
+  hinweisZeigen("💾 Aufgehoben!");
+});
+
+// Bild als Hintergrund der Startseite (wird am Stick gespeichert)
+$("hintergrund").addEventListener("click", async () => {
+  try {
+    await KsApp.alsHintergrund(leinwand.toDataURL("image/jpeg", 0.85));
+    hinweisZeigen("🏞️ Ist jetzt dein Hintergrund!");
+  } catch (e) {
+    hinweisZeigen("Das hat nicht geklappt.");
+  }
 });
 
 $("bilder").addEventListener("click", () => {

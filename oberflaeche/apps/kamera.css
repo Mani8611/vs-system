@@ -1,0 +1,43 @@
+/* Kinder-Stick – Kamera (Blasen platzen, Zauberspiegel, Meine Fotos) */
+.kamera-video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+.kamera-buehne { flex: 1; display: flex; gap: 20px; padding: 20px; min-height: 0; justify-content: center; }
+.kamera-rahmen { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; }
+#bild { border-radius: 24px; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25); background: #1F2933; cursor: pointer; touch-action: none; }
+
+.countdown { position: absolute; font-size: 220px; font-weight: bold; color: var(--weiss);
+  text-shadow: 0 6px 24px rgba(0, 0, 0, 0.5); pointer-events: none; }
+.blitz { position: absolute; inset: 0; background: var(--weiss); border-radius: 24px; animation: blitzen 0.4s forwards; pointer-events: none; }
+@keyframes blitzen { from { opacity: 1; } to { opacity: 0; } }
+.start-hinweis { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none;
+  background: rgba(27, 67, 50, 0.85); color: var(--weiss); font-size: 34px; font-weight: bold;
+  padding: 20px 36px; border-radius: 24px; text-align: center; }
+
+.spiegel-leiste { width: 250px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.effekte, .sticker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.effekte button, .sticker button {
+  height: 70px; border: none; border-radius: 18px; background: var(--weiss); cursor: pointer;
+  font-size: 34px; box-shadow: 0 3px 0 rgba(0, 0, 0, 0.12);
+}
+.effekte button.aktiv, .sticker button.aktiv { outline: 5px solid var(--gelb); }
+.spiegel-knoepfe { display: flex; gap: 12px; align-items: center; justify-content: center; margin-top: auto; }
+.kopf-knopf.hell { background: var(--weiss); color: var(--gruen); box-shadow: 0 3px 0 rgba(0, 0, 0, 0.12); }
+.foto-knopf { width: 120px; height: 120px; border-radius: 60px; border: 8px solid var(--weiss); cursor: pointer;
+  background: var(--koralle); font-size: 52px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); }
+.foto-knopf:active { transform: scale(0.94); }
+
+.foto-liste { display: grid; grid-template-columns: repeat(auto-fill, 240px); gap: 16px; justify-content: center;
+  width: 100%; max-width: 1100px; }
+.foto-liste button { border: none; padding: 0; border-radius: 16px; overflow: hidden; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); background: var(--weiss); }
+.foto-liste img { display: block; width: 240px; height: 180px; object-fit: cover; }
+.bilder-leer { font-size: 22px; color: var(--grau); text-align: center; }
+
+.foto-dialog { max-width: 900px; }
+.foto-dialog img { display: block; max-width: 100%; max-height: 60vh; border-radius: 16px; margin: 0 auto 8px; }
+
+.gespeichert {
+  position: fixed; left: 50%; top: 110px; transform: translateX(-50%); z-index: 10;
+  background: var(--gruen); color: var(--weiss); font-size: 28px; font-weight: bold;
+  padding: 14px 32px; border-radius: 20px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}

@@ -147,6 +147,121 @@ $("wlan-verbinden").addEventListener("click", async () => {
   }
 });
 
+// Bluetooth-Kopfhörer
+async function btSuchen() {
+  meldung($("bt-meldung"), "Suche Geräte (ca. 10 Sekunden) …");
+  $("bt-suchen").disabled = true;
+  try {
+    const { geraete } = await elternApi("/api/eltern/bluetooth-liste");
+    const liste = $("bt-liste");
+    liste.replaceChildren();
+    for (const g of geraete) {
+      const zeile = document.createElement("div");
+      zeile.className = "bt-geraet";
+      const name = document.createElement("span");
+      name.textContent = `${g.audio ? "🎧" : "📱"} ${g.name}${g.verbunden ? " – verbunden" : g.gekoppelt ? " – gekoppelt" : ""}`;
+      const knoepfe = document.createElement("span");
+      knoepfe.className = "knopf-reihe";
+      if (!g.verbunden) {
+        const verbinden = document.createElement("button");
+        verbinden.type = "button";
+        verbinden.className = "knopf";
+        verbinden.textContent = g.gekoppelt ? "Verbinden" : "Koppeln";
+        verbinden.addEventListener("click", () => btAktion("/api/eltern/bluetooth-verbinden", g, `Verbinde mit „${g.name}“ …`));
+        knoepfe.append(verbinden);
+      }
+      if (g.gekoppelt) {
+        const entfernen = document.createElement("button");
+        entfernen.type = "button";
+        entfernen.className = "knopf zweit";
+        entfernen.textContent = "Entfernen";
+        entfernen.addEventListener("click", () => btAktion("/api/eltern/bluetooth-entfernen", g, "Entferne …"));
+        knoepfe.append(entfernen);
+      }
+      zeile.append(name, knoepfe);
+      liste.append(zeile);
+    }
+    meldung($("bt-meldung"), geraete.length ? "" : "Kein Gerät gefunden. Ist der Kopfhörer im Kopplungsmodus?", geraete.length ? "" : "fehler");
+  } catch (e) {
+    meldung($("bt-meldung"), e.message, "fehler");
+  }
+  $("bt-suchen").disabled = false;
+}
+
+async function btAktion(pfad, geraet, text) {
+  meldung($("bt-meldung"), text);
+  try {
+    await elternApi(pfad, { mac: geraet.mac });
+    await btSuchen();
+    meldung($("bt-meldung"), "Erledigt.", "ok");
+  } catch (e) {
+    meldung($("bt-meldung"), e.message, "fehler");
+  }
+}
+$("bt-suchen").addEventListener("click", btSuchen);
+
+// Eigene Hintergrundbilder
+async function bilderZeigen() {
+  const s = await api("/api/status");
+  const bereich = $("eigene-bilder");
+  bereich.replaceChildren();
+  for (const h of s.eigene_hintergruende || []) {
+    const bild = document.createElement("div");
+    bild.className = "eigenes-bild";
+    bild.style.backgroundImage = `url("${h.url}")`;
+    const weg = document.createElement("button");
+    weg.type = "button";
+    weg.textContent = "🗑 Löschen";
+    weg.addEventListener("click", async () => {
+      if (!confirm("Dieses Bild löschen?")) return;
+      try {
+        await elternApi("/api/eltern/hintergrund-loeschen", { id: h.id });
+        bilderZeigen();
+      } catch (e) {
+        meldung($("bild-meldung"), e.message, "fehler");
+      }
+    });
+    bild.append(weg);
+    bereich.append(bild);
+  }
+}
+
+/** Liest ein Bild und verkleinert es auf höchstens 1920 × 1080 (JPEG) – spart Platz am Stick. */
+function bildVerkleinern(datei) {
+  return new Promise((fertig, fehler) => {
+    const leser = new FileReader();
+    leser.onerror = () => fehler(new Error("Die Datei konnte nicht gelesen werden."));
+    leser.onload = () => {
+      const bild = new Image();
+      bild.onerror = () => fehler(new Error("Das ist kein Bild, das sich öffnen lässt."));
+      bild.onload = () => {
+        const faktor = Math.min(1, 1920 / bild.width, 1080 / bild.height);
+        const leinwand = document.createElement("canvas");
+        leinwand.width = Math.round(bild.width * faktor);
+        leinwand.height = Math.round(bild.height * faktor);
+        leinwand.getContext("2d").drawImage(bild, 0, 0, leinwand.width, leinwand.height);
+        fertig(leinwand.toDataURL("image/jpeg", 0.85));
+      };
+      bild.src = leser.result;
+    };
+    leser.readAsDataURL(datei);
+  });
+}
+
+$("bild-datei").addEventListener("change", async () => {
+  const datei = $("bild-datei").files[0];
+  $("bild-datei").value = "";
+  if (!datei) return;
+  meldung($("bild-meldung"), "Lade hoch …");
+  try {
+    await elternApi("/api/eltern/hintergrund-hochladen", { bild: await bildVerkleinern(datei) });
+    meldung($("bild-meldung"), "Hochgeladen. Das Kind kann es jetzt mit 🖼️ auswählen.", "ok");
+    bilderZeigen();
+  } catch (e) {
+    meldung($("bild-meldung"), e.message, "fehler");
+  }
+});
+
 // Fertig
 $("zurueck").addEventListener("click", zurueckZumKind);
 $("beenden").addEventListener("click", async () => {
@@ -171,3 +286,4 @@ $("ausschalten").addEventListener("click", async () => {
 });
 
 laden().catch((e) => meldung($("einst-meldung"), e.message, "fehler"));
+bilderZeigen().catch(() => {});

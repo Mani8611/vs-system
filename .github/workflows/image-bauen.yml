@@ -22,7 +22,7 @@ jobs:
         run: |
           python3 -m py_compile dienst/kinderstick_dienst.py
           python3 -m py_compile image/dateien/usr/libexec/kinderstick/lernfenster
-          python3 -m py_compile image/dateien/usr/libexec/kinderstick/videofenster
+          python3 -m py_compile image/dateien/usr/libexec/kinderstick/fertigfenster
       - name: JSON prüfen
         run: |
           python3 -m json.tool image/dateien/usr/share/kinderstick/apps.json > /dev/null
@@ -34,7 +34,7 @@ jobs:
           bash -n werkzeuge/stick-schreiben.sh
           bash -n image/efi-direktstart.sh
       - name: JavaScript-Syntax prüfen
-        run: for f in oberflaeche/*.js; do node --check "$f"; done
+        run: for f in oberflaeche/*.js oberflaeche/apps/*.js; do node --check "$f"; done
       - name: Dienst im Testmodus starten und abfragen
         run: |
           KS_TESTMODUS=1 KS_DATEN="$RUNNER_TEMP/ks" KS_OBERFLAECHE=oberflaeche \
@@ -43,6 +43,8 @@ jobs:
           sleep 2
           curl -fsS http://127.0.0.1:8411/api/status
           curl -fsS -o /dev/null http://127.0.0.1:8411/index.html
+          curl -fsS http://127.0.0.1:8411/api/lautstaerke
+          curl -fsS -o /dev/null http://127.0.0.1:8411/apps/kamera.html
 
   bauen:
     needs: pruefen

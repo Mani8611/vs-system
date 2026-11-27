@@ -129,8 +129,8 @@ input:focus, select:focus { outline: none; border-color: var(--mint); }
 
 /* ---------- Nur Vorschau-Modus (file://) ---------- */
 .vorschau-leiste {
-  position: fixed; left: 160px; bottom: 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-  max-width: calc(100% - 250px); padding: 8px 12px; border-radius: 12px;
+  position: fixed; left: 230px; bottom: 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  max-width: calc(100% - 320px); padding: 8px 12px; border-radius: 12px;
   background: rgba(31, 41, 51, 0.88); color: var(--weiss); font-size: 14px; z-index: 50;
 }
 .vorschau-leiste button { font: inherit; font-size: 14px; padding: 6px 10px; border: none; border-radius: 8px; background: var(--weiss); color: var(--text); cursor: pointer; }
@@ -187,3 +187,20 @@ body.kind:not([data-hintergrund="standard"]) .sperre {
 }
 .aus-hinweis h2 { font-size: 48px; margin: 24px 0 8px; color: var(--gruen); }
 .aus-hinweis p { font-size: 26px; margin: 0; color: var(--grau); }
+
+/* ---------- Lautstärke ---------- */
+.ton-dialog { width: min(560px, calc(100% - 32px)); }
+.ton-reihe { display: flex; align-items: center; gap: 16px; font-size: 36px; }
+.ton-regler { flex: 1; height: 40px; accent-color: var(--gelb); padding: 0; border: none; }
+.ton-hinweis { color: var(--grau); font-size: 17px; text-align: center; margin: 16px 0 0; }
+
+/* ---------- Eltern: Bluetooth und eigene Bilder ---------- */
+.bt-geraet { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px;
+  border: 2px solid #CFDDD5; border-radius: 10px; font-size: 17px; }
+.bt-geraet .knopf { font-size: 15px; padding: 8px 14px; }
+.eigene-bilder { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.eigenes-bild { position: relative; height: 104px; border-radius: 10px; background-size: cover; background-position: center;
+  box-shadow: inset 0 0 0 2px rgba(27, 67, 50, 0.15); }
+.eigenes-bild button { position: absolute; right: 6px; top: 6px; border: none; border-radius: 8px; padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.9); cursor: pointer; font-size: 15px; }
+.datei-wahl { font-size: 16px; }

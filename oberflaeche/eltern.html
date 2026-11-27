@@ -77,6 +77,25 @@
     </section>
 
     <section class="karte">
+      <h2>Kopfhörer (Bluetooth)</h2>
+      <p class="hinweis">Kopfhörer mit Kabel funktionieren ohne Einstellung – einfach einstecken. Bluetooth-Kopfhörer einmal hier koppeln: Kopfhörer in den Kopplungsmodus bringen (meist Einschaltknopf lange drücken), dann „Geräte suchen“. Danach verbinden sie sich beim Einschalten von selbst. Die Lautstärke stellt das Kind mit dem Knopf 🔊 auf der Startseite ein.</p>
+      <div class="wlan-liste" id="bt-liste"></div>
+      <div class="knopf-reihe">
+        <button class="knopf zweit" type="button" id="bt-suchen">Geräte suchen</button>
+      </div>
+      <p class="meldung" id="bt-meldung" aria-live="polite"></p>
+    </section>
+
+    <section class="karte">
+      <h2>Eigene Hintergrundbilder</h2>
+      <p class="hinweis">Fotos oder Bilder als Hintergrund für die Startseite – z. B. von einem USB-Stick. Das Kind wählt sie mit dem Knopf 🖼️ aus. Gemalte Bilder und Kamera-Fotos des Kindes erscheinen hier ebenfalls. Höchstens 20 Bilder; die Bilder bleiben auf dem Stick.</p>
+      <div class="eigene-bilder" id="eigene-bilder"></div>
+      <label class="knopf zweit datei-wahl" for="bild-datei">Bild hochladen …</label>
+      <input id="bild-datei" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+      <p class="meldung" id="bild-meldung" aria-live="polite"></p>
+    </section>
+
+    <section class="karte">
       <h2>Fertig?</h2>
       <div class="knopf-reihe">
         <button class="knopf" type="button" id="zurueck">Zurück zum Kind</button>

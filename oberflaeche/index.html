@@ -26,6 +26,7 @@
   <div class="unten-links">
     <button id="aus-knopf" class="rund-knopf" type="button" title="Computer ausschalten" aria-label="Computer ausschalten">⏻</button>
     <button id="hg-knopf" class="rund-knopf" type="button" title="Hintergrund aussuchen" aria-label="Hintergrund aussuchen">🖼️</button>
+    <button id="ton-knopf" class="rund-knopf" type="button" title="Lautstärke" aria-label="Lautstärke">🔊</button>
   </div>
   <button id="eltern-knopf" class="eltern-knopf" type="button" title="Für Mama und Papa" aria-label="Eltern-Bereich">🔒</button>
 
@@ -42,6 +43,23 @@
     <div class="hg-galerie" id="hg-galerie"></div>
     <button class="pin-abbrechen" id="hg-schliessen" type="button">Schließen</button>
   </dialog>
+
+  <dialog id="ton-dialog" class="ton-dialog" aria-labelledby="ton-titel">
+    <h2 class="pin-titel" id="ton-titel">Wie laut?</h2>
+    <div class="ton-reihe">
+      <span aria-hidden="true">🔈</span>
+      <input id="ton-regler" class="ton-regler" type="range" min="0" max="100" step="5" aria-label="Lautstärke">
+      <span aria-hidden="true">🔊</span>
+    </div>
+    <p class="ton-hinweis" id="ton-hinweis">Kopfhörer mit Kabel einstecken – der Ton kommt dann von selbst dort heraus.</p>
+    <button class="pin-abbrechen" id="ton-schliessen" type="button">Schließen</button>
+  </dialog>
+
+  <div id="oeffnen-hinweis" class="aus-hinweis" hidden aria-live="polite">
+    <div class="sperre-symbol" id="oeffnen-symbol"></div>
+    <h2 id="oeffnen-titel"></h2>
+    <p>Einen Moment …</p>
+  </div>
 
   <div id="aus-hinweis" class="aus-hinweis" hidden>
     <div class="sperre-symbol">👋</div>

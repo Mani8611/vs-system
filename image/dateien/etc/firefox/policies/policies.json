@@ -16,7 +16,20 @@
       "StartPage": "homepage"
     },
     "DNSOverHTTPS": { "Enabled": false, "Locked": true },
-    "ExtensionSettings": { "*": { "installation_mode": "blocked" } },
+    "ExtensionSettings": {
+      "*": { "installation_mode": "blocked" },
+      "langpack-de@firefox.mozilla.org": { "installation_mode": "allowed" }
+    },
+    "RequestedLocales": ["de"],
+    "Preferences": {
+      "intl.accept_languages": { "Value": "de-AT, de-DE, de, en", "Status": "locked" }
+    },
+    "Permissions": {
+      "Camera": { "Allow": ["http://127.0.0.1:8411"], "BlockNewRequests": true, "Locked": true },
+      "Microphone": { "BlockNewRequests": true, "Locked": true },
+      "Location": { "BlockNewRequests": true, "Locked": true },
+      "Notifications": { "BlockNewRequests": true, "Locked": true }
+    },
     "DisableDeveloperTools": true,
     "BlockAboutConfig": true,
     "BlockAboutAddons": true,

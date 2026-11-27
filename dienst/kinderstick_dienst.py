@@ -6,7 +6,9 @@ Aufgaben:
   * zählt die Nutzungszeit des Kinderkontos und setzt Tageslimit und Schlafenszeit durch
   * startet freigegebene Apps im Kinderkonto und beendet sie, wenn die Zeit um ist
   * Einrichtungsassistent (Name, Schulstufe, Eltern-PIN, Elternpasswort, Zeiten)
-  * Eltern-Bereich mit PIN: Bonuszeit, Zeiten, App-Freigaben, WLAN, Kinder-Modus beenden
+  * Eltern-Bereich mit PIN: Bonuszeit, Zeiten, App-Freigaben, WLAN, Bluetooth-Kopfhörer,
+    eigene Hintergrundbilder, Kinder-Modus beenden
+  * Lautstärke (für die Startseite), Hintergrund, Ausschalten
 
 Sicherheit:
   * lauscht nur auf 127.0.0.1, prüft Host- und Origin-Header (Schutz vor DNS-Rebinding/CSRF)
@@ -18,10 +20,13 @@ Entwicklung ohne Stick (Testmodus, keine Systembefehle):
   KS_APPS=./image/dateien/usr/share/kinderstick/apps.json python3 dienst/kinderstick_dienst.py
 Nur Python-Standardbibliothek.
 """
+import base64
+import binascii
 import hashlib
 import hmac
 import json
 import os
+import pwd
 import re
 import secrets
 import subprocess
@@ -39,6 +44,14 @@ APPS_DATEI = Path(os.environ.get("KS_APPS", "/usr/share/kinderstick/apps.json"))
 DATEN = Path(os.environ.get("KS_DATEN", "/var/lib/kinderstick"))
 EINST_DATEI = DATEN / "einstellungen.json"
 NUTZ_DATEI = DATEN / "nutzung.json"
+EIGENE_HG = DATEN / "hintergruende"     # eigene Hintergrundbilder (JPEG)
+EIGEN_ID = re.compile(r"eigen-[0-9a-f]{12}")
+MAC = re.compile(r"[0-9A-F]{2}(:[0-9A-F]{2}){5}")
+MAX_EIGENE_HG = 20
+MAX_BILD_BYTES = 2_500_000
+MAX_ANFRAGE = 10_000                   # Bytes; Bilder: MAX_ANFRAGE_BILD
+MAX_ANFRAGE_BILD = 3_500_000
+BILD_ROUTEN = {"/api/hintergrund-aus-bild", "/api/eltern/hintergrund-hochladen"}
 KIND = "kind"
 ELTERN = "eltern"
 TESTMODUS = os.environ.get("KS_TESTMODUS") == "1"
@@ -71,6 +84,7 @@ MIME = {
     ".js": "text/javascript; charset=utf-8",
     ".svg": "image/svg+xml",
     ".png": "image/png",
+    ".jpg": "image/jpeg",
     ".ico": "image/x-icon",
 }
 
@@ -347,6 +361,8 @@ def status():
             "limit_minuten": int(gesamt),
             "schlafen_bis": einst["schlafen_bis"],
             "hintergrund": einst.get("hintergrund", "standard"),
+            "eigene_hintergruende": [{"id": i, "url": f"/eigene-hintergruende/{i}.jpg"}
+                                     for i in eigene_hintergruende()],
             "schulstufe": einst["schulstufe"],
             "uhrzeit": datetime.now().strftime("%H:%M"),   # Uhrzeit am Stick (Kontrolle bei der Einrichtung)
             "apps": [{"id": a["id"], "name": a["name"], "symbol": a.get("symbol", "")}
@@ -481,9 +497,154 @@ def eltern_wlan_verbinden(d):
     return 200, {"ok": True}
 
 
+def eigene_hintergruende():
+    """Eigene Bilder (von den Eltern hochgeladen oder vom Kind gemalt/fotografiert), neueste zuerst."""
+    dateien = sorted(EIGENE_HG.glob("eigen-*.jpg"), key=lambda p: p.stat().st_mtime, reverse=True)
+    return [p.stem for p in dateien if EIGEN_ID.fullmatch(p.stem)]
+
+
 def hintergruende():
-    """Erlaubte Hintergründe: „standard“ plus alle SVG-Dateien in oberflaeche/hintergruende/."""
-    return {"standard"} | {p.stem for p in (OBERFLAECHE / "hintergruende").glob("*.svg")}
+    """Erlaubte Hintergründe: „standard“, alle SVG-Dateien in oberflaeche/hintergruende/ und eigene Bilder."""
+    return ({"standard"} | {p.stem for p in (OBERFLAECHE / "hintergruende").glob("*.svg")}
+            | set(eigene_hintergruende()))
+
+
+def bild_speichern(d, als_hintergrund):
+    """Speichert ein JPEG (data:-Adresse, im Browser schon auf Bildschirmgröße verkleinert)."""
+    daten = d.get("bild")
+    praefix = "data:image/jpeg;base64,"
+    if not isinstance(daten, str) or not daten.startswith(praefix):
+        return 400, {"fehler": "Bitte ein Bild auswählen."}
+    try:
+        roh = base64.b64decode(daten[len(praefix):], validate=True)
+    except (ValueError, binascii.Error):
+        return 400, {"fehler": "Das Bild ist beschädigt."}
+    if not roh.startswith(b"\xff\xd8\xff") or len(roh) > MAX_BILD_BYTES:
+        return 400, {"fehler": "Das Bild ist zu groß oder kein JPEG."}
+    with sperre:
+        EIGENE_HG.mkdir(mode=0o700, parents=True, exist_ok=True)
+        # Platz begrenzen: älteste eigene Bilder entfernen (nicht das gerade gewählte)
+        vorhanden = eigene_hintergruende()
+        for alt in vorhanden[MAX_EIGENE_HG - 1:]:
+            if alt != einst.get("hintergrund"):
+                (EIGENE_HG / f"{alt}.jpg").unlink(missing_ok=True)
+        neu = "eigen-" + secrets.token_hex(6)
+        tmp = EIGENE_HG / f"{neu}.tmp"
+        tmp.write_bytes(roh)
+        os.chmod(tmp, 0o644)
+        os.replace(tmp, EIGENE_HG / f"{neu}.jpg")
+        if als_hintergrund:
+            einst["hintergrund"] = neu
+            speichern(EINST_DATEI, einst)
+    return 200, {"ok": True, "id": neu}
+
+
+def eltern_hintergrund_loeschen(d):
+    wahl = d.get("id")
+    if not isinstance(wahl, str) or wahl not in eigene_hintergruende():
+        return 404, {"fehler": "Dieses Bild gibt es nicht."}
+    with sperre:
+        (EIGENE_HG / f"{wahl}.jpg").unlink(missing_ok=True)
+        if einst.get("hintergrund") == wahl:
+            einst["hintergrund"] = "standard"
+            speichern(EINST_DATEI, einst)
+    return 200, {"ok": True}
+
+
+# ---------------------------------------------------------------- Ton und Kopfhörer
+
+def im_kinderkonto(befehl, zeit=10):
+    """Befehl in der Sitzung des Kindes (PipeWire läuft dort, nicht als root)."""
+    if TESTMODUS:
+        return ausfuehren(befehl)
+    uid = pwd.getpwnam(KIND).pw_uid
+    return ausfuehren(["runuser", "-u", KIND, "--", "env", f"XDG_RUNTIME_DIR=/run/user/{uid}", *befehl], zeit=zeit)
+
+
+def lautstaerke():
+    if TESTMODUS:
+        return 200, {"wert": 50, "stumm": False}
+    try:
+        r = im_kinderkonto(["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"])
+    except (OSError, subprocess.TimeoutExpired, KeyError):
+        return 503, {"fehler": "Ton nicht verfügbar."}
+    treffer = re.search(r"Volume:\s*([\d.]+)", r.stdout)
+    if r.returncode != 0 or not treffer:
+        return 503, {"fehler": "Ton nicht verfügbar."}
+    return 200, {"wert": round(float(treffer.group(1)) * 100), "stumm": "MUTED" in r.stdout}
+
+
+def lautstaerke_setzen(d):
+    try:
+        wert = int(d.get("wert"))
+    except (TypeError, ValueError):
+        return 400, {"fehler": "Ungültige Lautstärke."}
+    wert = max(0, min(100, wert))
+    try:
+        im_kinderkonto(["wpctl", "set-volume", "-l", "1.0", "@DEFAULT_AUDIO_SINK@", f"{wert / 100:.2f}"])
+        im_kinderkonto(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "1" if wert == 0 else "0"])
+    except (OSError, subprocess.TimeoutExpired, KeyError):
+        return 503, {"fehler": "Ton nicht verfügbar."}
+    return 200, {"ok": True, "wert": wert}
+
+
+def bluetooth(*argumente, zeit=20):
+    return ausfuehren(["bluetoothctl", *argumente], zeit=zeit)
+
+
+def eltern_bluetooth_liste():
+    """Sucht 8 Sekunden nach Bluetooth-Geräten. Kopfhörer und Lautsprecher stehen oben."""
+    if TESTMODUS:
+        return 200, {"geraete": []}
+    bluetooth("power", "on", zeit=10)
+    bluetooth("--timeout", "8", "scan", "on", zeit=20)
+    geraete = []
+    for zeile in bluetooth("devices", zeit=10).stdout.splitlines():
+        teile = zeile.split(" ", 2)
+        if len(teile) < 3 or teile[0] != "Device" or not MAC.fullmatch(teile[1]):
+            continue
+        mac, name = teile[1], teile[2].strip()
+        if name.replace("-", ":") == mac:      # Gerät ohne Namen
+            continue
+        info = bluetooth("info", mac, zeit=10).stdout
+        symbol = (re.search(r"Icon:\s*(\S+)", info) or [None, ""])[1]
+        geraete.append({
+            "mac": mac, "name": name[:60],
+            "audio": symbol.startswith("audio"),
+            "gekoppelt": "Paired: yes" in info,
+            "verbunden": "Connected: yes" in info,
+        })
+    geraete.sort(key=lambda g: (not g["verbunden"], not g["audio"], g["name"].lower()))
+    return 200, {"geraete": geraete[:30]}
+
+
+def eltern_bluetooth_verbinden(d):
+    mac = d.get("mac")
+    if not isinstance(mac, str) or not MAC.fullmatch(mac):
+        return 400, {"fehler": "Bitte ein Gerät auswählen."}
+    if TESTMODUS:
+        return 200, {"ok": True}
+    info = bluetooth("info", mac, zeit=10).stdout
+    if "Paired: yes" not in info:
+        # Kurz erneut suchen – BlueZ vergisst gefundene, nicht gekoppelte Geräte nach 30 Sekunden
+        bluetooth("--timeout", "5", "scan", "on", zeit=15)
+        r = bluetooth("--agent", "NoInputNoOutput", "pair", mac, zeit=40)
+        if r.returncode != 0 and "AlreadyExists" not in r.stdout + r.stderr:
+            return 502, {"fehler": "Koppeln hat nicht geklappt. Kopfhörer in den Kopplungsmodus bringen und erneut versuchen."}
+    bluetooth("trust", mac, zeit=10)       # verbindet sich danach beim Einschalten von selbst
+    r = bluetooth("connect", mac, zeit=30)
+    if r.returncode != 0:
+        return 502, {"fehler": "Gekoppelt, aber nicht verbunden. Gerät einschalten und erneut versuchen."}
+    return 200, {"ok": True}
+
+
+def eltern_bluetooth_entfernen(d):
+    mac = d.get("mac")
+    if not isinstance(mac, str) or not MAC.fullmatch(mac):
+        return 400, {"fehler": "Bitte ein Gerät auswählen."}
+    if not TESTMODUS:
+        bluetooth("remove", mac, zeit=15)
+    return 200, {"ok": True}
 
 
 def kind_hintergrund(d):
@@ -501,10 +662,17 @@ def ausschalten():
     def los():
         with sperre:
             speichern(NUTZ_DATEI, nutzung)
-        try:
-            ausfuehren(["systemctl", "poweroff"], zeit=10)
-        except (OSError, subprocess.TimeoutExpired):
-            pass
+        # Test 27.11.2026: „systemctl poweroff“ tat nichts – die laufende Kinder-Sitzung (GNOME)
+        # hält Sperren gegen das Ausschalten. Darum Sperren übergehen; notfalls direkt das Ziel starten.
+        for befehl in (["systemctl", "poweroff", "--check-inhibitors=no"],
+                       ["systemctl", "start", "poweroff.target", "--job-mode=replace-irreversibly"]):
+            try:
+                r = ausfuehren(befehl, zeit=15)
+                if r.returncode == 0:
+                    return
+                print("Ausschalten fehlgeschlagen:", " ".join(befehl), r.stderr.strip(), flush=True)
+            except (OSError, subprocess.TimeoutExpired) as fehler:
+                print("Ausschalten fehlgeschlagen:", " ".join(befehl), fehler, flush=True)
     threading.Timer(1.0, los).start()   # erst antworten, dann herunterfahren
     return 200, {"ok": True}
 
@@ -554,6 +722,11 @@ ELTERN_ROUTEN = {
     "/api/eltern/beenden": lambda d: eltern_beenden(),
     "/api/eltern/wlan-liste": lambda d: (200, {"netze": wlan_liste()}),
     "/api/eltern/wlan-verbinden": eltern_wlan_verbinden,
+    "/api/eltern/hintergrund-hochladen": lambda d: bild_speichern(d, als_hintergrund=False),
+    "/api/eltern/hintergrund-loeschen": eltern_hintergrund_loeschen,
+    "/api/eltern/bluetooth-liste": lambda d: eltern_bluetooth_liste(),
+    "/api/eltern/bluetooth-verbinden": eltern_bluetooth_verbinden,
+    "/api/eltern/bluetooth-entfernen": eltern_bluetooth_entfernen,
 }
 
 
@@ -589,6 +762,14 @@ class Anfrage(BaseHTTPRequestHandler):
         pfad = self.path.split("?", 1)[0]
         if pfad == "/api/status":
             return self.json_antwort(200, status())
+        if pfad == "/api/lautstaerke":
+            return self.json_antwort(*lautstaerke())
+        if pfad.startswith("/eigene-hintergruende/"):
+            name = pfad.rsplit("/", 1)[1].removesuffix(".jpg")
+            datei = EIGENE_HG / f"{name}.jpg"
+            if not EIGEN_ID.fullmatch(name) or not datei.is_file():
+                return self.json_antwort(404, {"fehler": "Nicht gefunden."})
+            return self.senden(200, datei.read_bytes(), "image/jpeg")
         if pfad == "/":
             pfad = "/index.html"
         datei = (OBERFLAECHE / pfad.lstrip("/")).resolve()
@@ -609,7 +790,8 @@ class Anfrage(BaseHTTPRequestHandler):
             laenge = int(self.headers.get("Content-Length") or 0)
         except ValueError:
             laenge = -1
-        if not 0 <= laenge <= 10000:
+        pfad = self.path.split("?", 1)[0]
+        if not 0 <= laenge <= (MAX_ANFRAGE_BILD if pfad in BILD_ROUTEN else MAX_ANFRAGE):
             return self.json_antwort(413, {"fehler": "Anfrage zu groß."})
         try:
             d = json.loads(self.rfile.read(laenge) or b"{}")
@@ -618,12 +800,15 @@ class Anfrage(BaseHTTPRequestHandler):
         except (ValueError, UnicodeDecodeError):
             return self.json_antwort(400, {"fehler": "Ungültige Anfrage."})
 
-        pfad = self.path.split("?", 1)[0]
         try:
             if pfad == "/api/starten":
                 code, antwort = kind_starten(d)
             elif pfad == "/api/hintergrund":
                 code, antwort = kind_hintergrund(d)
+            elif pfad == "/api/hintergrund-aus-bild":
+                code, antwort = bild_speichern(d, als_hintergrund=True)
+            elif pfad == "/api/lautstaerke":
+                code, antwort = lautstaerke_setzen(d)
             elif pfad == "/api/ausschalten":
                 code, antwort = ausschalten()
             elif pfad == "/api/einrichtung":

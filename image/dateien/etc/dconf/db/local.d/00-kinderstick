@@ -1,6 +1,6 @@
 # Kinder-Stick: Standardeinstellungen für alle Konten
 [org/gnome/desktop/input-sources]
-sources=[('xkb', 'at')]
+sources=[('xkb', 'at+nodeadkeys')]
 
 [org/gnome/desktop/screensaver]
 lock-enabled=false

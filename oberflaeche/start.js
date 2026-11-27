@@ -4,6 +4,8 @@
 const el = (id) => document.getElementById(id);
 let letzteApps = "";
 let letzterGrund = null;
+let letzteEigene = "";
+let eigeneHintergruende = [];   // [{id, url}] – eigene Bilder (Eltern-Bereich, Malen, Kamera)
 
 async function aktualisieren() {
   let s;
@@ -19,6 +21,12 @@ async function aktualisieren() {
   }
 
   el("gruss").textContent = `Hallo ${s.kind_name}!`;
+  const eigeneStand = JSON.stringify(s.eigene_hintergruende || []);
+  if (eigeneStand !== letzteEigene) {
+    eigeneHintergruende = s.eigene_hintergruende || [];
+    galerieBauen();
+    letzteEigene = eigeneStand;
+  }
   hintergrundSetzen(s.hintergrund);
 
   // Restzeit
@@ -78,11 +86,52 @@ async function starten(app) {
   try {
     const antwort = await api("/api/starten", { app: app.id });
     if (antwort.seite) location.href = antwort.seite;   // eigenes Programm (apps/…)
+    else oeffnenZeigen(app);
   } catch (e) {
     vorlesen(e.message);
     aktualisieren();
   }
 }
+
+// ---------- „Wird geöffnet“ ----------
+// Programme wie Lernspiele oder Netflix brauchen ein paar Sekunden. So lange zeigt die Startseite
+// ein Ladebild (auch damit der „Fertig“-Knopf nicht über dem Namen des Kindes erscheint).
+let oeffnenZeit = null;
+function oeffnenZeigen(app) {
+  el("oeffnen-symbol").textContent = app.symbol;
+  el("oeffnen-titel").textContent = `${app.name} wird geöffnet`;
+  el("oeffnen-hinweis").hidden = false;
+  clearTimeout(oeffnenZeit);
+  oeffnenZeit = setTimeout(oeffnenVerbergen, 30000);
+}
+function oeffnenVerbergen() {
+  clearTimeout(oeffnenZeit);
+  el("oeffnen-hinweis").hidden = true;
+}
+// Kommt die Startseite nach dem Programm wieder nach vorne, verschwindet das Ladebild
+let warWeg = false;
+window.addEventListener("blur", () => { if (!el("oeffnen-hinweis").hidden) warWeg = true; });
+window.addEventListener("focus", () => { if (warWeg) { warWeg = false; oeffnenVerbergen(); } });
+el("oeffnen-hinweis").addEventListener("click", oeffnenVerbergen);
+
+// ---------- Lautstärke ----------
+let tonZeit = null;
+el("ton-knopf").addEventListener("click", async () => {
+  el("ton-dialog").showModal();
+  try {
+    const t = await api("/api/lautstaerke");
+    el("ton-regler").value = t.stumm ? 0 : t.wert;
+    el("ton-regler").disabled = false;
+  } catch (e) {
+    el("ton-regler").disabled = true;
+    el("ton-hinweis").textContent = "Der Ton lässt sich gerade nicht einstellen.";
+  }
+});
+el("ton-regler").addEventListener("input", () => {
+  clearTimeout(tonZeit);   // nicht bei jeder kleinen Bewegung den Dienst fragen
+  tonZeit = setTimeout(() => api("/api/lautstaerke", { wert: Number(el("ton-regler").value) }).catch(() => {}), 150);
+});
+el("ton-schliessen").addEventListener("click", () => el("ton-dialog").close());
 
 // ---------- Hintergrund-Galerie ----------
 // Eigene, frei verwendbare Bilder (oberflaeche/hintergruende/). Der Dienst prüft die Auswahl.
@@ -96,17 +145,22 @@ const HINTERGRUENDE = [
 ];
 
 function hintergrundSetzen(id) {
-  document.body.dataset.hintergrund = HINTERGRUENDE.some((h) => h.id === id) ? id : "standard";
+  const eigen = eigeneHintergruende.find((h) => h.id === id);
+  document.body.dataset.hintergrund = eigen ? "eigen" : (HINTERGRUENDE.some((h) => h.id === id) ? id : "standard");
+  document.body.style.backgroundImage = eigen ? `url("${eigen.url}")` : "";
 }
 
 function galerieBauen() {
-  for (const h of HINTERGRUENDE) {
+  el("hg-galerie").replaceChildren();
+  const eigene = eigeneHintergruende.map((h, i) => ({ id: h.id, name: `Mein Bild ${i + 1}`, url: h.url }));
+  for (const h of [...HINTERGRUENDE, ...eigene]) {
     const knopf = document.createElement("button");
     knopf.type = "button";
     knopf.className = "hg-wahl";
     const bild = document.createElement("span");
     bild.className = "hg-bild";
-    bild.dataset.hintergrund = h.id;
+    bild.dataset.hintergrund = h.url ? "eigen" : h.id;
+    if (h.url) bild.style.backgroundImage = `url("${h.url}")`;
     const name = document.createElement("span");
     name.textContent = h.name;
     knopf.append(bild, name);

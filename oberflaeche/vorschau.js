@@ -23,7 +23,8 @@
     { id: "rechnen", name: "Rechnen", symbol: "➕", seite: "apps/rechnen.html" },
     { id: "buchstaben", name: "Buchstaben", symbol: "🔤", seite: "apps/buchstaben.html" },
     { id: "merkspiel", name: "Merkspiel", symbol: "🧠", seite: "apps/merkspiel.html" },
-    { id: "gcompris", name: "Lernspiele", symbol: "🧩", beschreibung: "GCompris: rund 195 Lernaktivitäten für 2- bis 10-Jährige – Buchstaben, Zählen, Uhr und Geld, Puzzles, Labyrinthe, Tiere, Musik. Auf dem Stick nur die Schwierigkeitsstufen passend zur Klasse." },
+    { id: "kamera", name: "Kamera", symbol: "📷", seite: "apps/kamera.html" },
+    { id: "gcompris", name: "Lernspiele", symbol: "🧩", beschreibung: "GCompris: rund 195 Lernaktivitäten für 2- bis 10-Jährige – Buchstaben, Zählen, Uhr und Geld, Puzzles, Labyrinthe, Tiere, Musik. Auf dem Stick nur die Schwierigkeitsstufen passend zur Klasse, im Vollbild mit „Fertig“-Knopf oben links." },
     { id: "anton", name: "ANTON", symbol: "📚", beschreibung: "ANTON: Lern-App nach Lehrplan – Deutsch, Mathematik, Sachunterricht. Die Klasse wird in ANTON gewählt. Braucht Internet." },
     { id: "netflix", name: "Netflix", symbol: "🎬", standard_aus: true, beschreibung: "Netflix im Kinderprofil, im Vollbild mit „Fertig“-Knopf oben links. Eigenes Abo nötig; Erwachsenen-Profile in Netflix mit PIN sperren. Erscheint erst, wenn die Eltern die Kachel freischalten." },
     { id: "disney", name: "Disney+", symbol: "🏰", standard_aus: true, beschreibung: "Disney+ im Kinderprofil, im Vollbild mit „Fertig“-Knopf oben links. Eigenes Abo nötig; Erwachsenen-Profile in Disney+ mit PIN sperren. Erscheint erst, wenn die Eltern die Kachel freischalten." },
@@ -32,7 +33,7 @@
     eingerichtet: false, kind_name: "", schulstufe: 1, pin: "",
     limit_schultag: 60, limit_wochenende: 90, schlafen_von: "19:30", schlafen_bis: "07:00",
     erlaubte_apps: null, minuten: 0, bonus: 0, schlafen_simuliert: false,
-    verlauf: [35, 50, 20, 60, 45, 80],
+    verlauf: [35, 50, 20, 60, 45, 80], eigene: [], lautstaerke: 50,
   };
   const BEISPIEL = { eingerichtet: true, kind_name: "Lena", pin: "1234" };
 
@@ -44,7 +45,10 @@
     return Object.assign({}, STANDARD);
   }
   function speichern() {
-    try { localStorage.setItem(SCHLUESSEL, JSON.stringify(z)); } catch (e) { /* kein Speicher */ }
+    try { localStorage.setItem(SCHLUESSEL, JSON.stringify(z)); } catch (e) {
+      // Speicher voll (zu viele eigene Bilder) – ältestes Bild entfernen und nochmal versuchen
+      if (z.eigene && z.eigene.length) { z.eigene.pop(); speichern(); }
+    }
   }
 
   let z = laden();
@@ -141,7 +145,7 @@
         return {
           eingerichtet: z.eingerichtet, kind_name: z.kind_name, gesperrt: s.gesperrt, grund: s.grund,
           rest_minuten: Math.floor(s.rest), limit_minuten: s.gesamt, schlafen_bis: z.schlafen_bis, apps: erlaubt(),
-          hintergrund: z.hintergrund || "standard", schulstufe: z.schulstufe,
+          hintergrund: z.hintergrund || "standard", schulstufe: z.schulstufe, eigene_hintergruende: z.eigene || [],
           uhrzeit: new Date().toTimeString().slice(0, 5),
         };
       case "/api/hintergrund":
@@ -149,6 +153,41 @@
         speichern();
         return { ok: true };
       case "/api/ausschalten":
+        return { ok: true };
+      case "/api/lautstaerke":   // ohne „wert“ = Abfrage (in der Vorschau gibt es kein GET/POST)
+        if ("wert" in d) z.lautstaerke = Math.max(0, Math.min(100, Number(d.wert)));
+        speichern();
+        return { wert: z.lautstaerke, stumm: z.lautstaerke === 0 };
+      case "/api/hintergrund-aus-bild":
+      case "/api/eltern/hintergrund-hochladen": {
+        if (!String(d.bild || "").startsWith("data:image/jpeg;base64,")) fehler(400, "Bitte ein Bild auswählen.");
+        const id = "eigen-" + Math.random().toString(16).slice(2, 14).padEnd(12, "0");
+        // Browser-Speicher der Vorschau ist klein: höchstens 4 eigene Bilder
+        z.eigene = [{ id, url: d.bild }, ...(z.eigene || [])].slice(0, 4);
+        if (pfad === "/api/hintergrund-aus-bild") z.hintergrund = id;
+        speichern();
+        if (JSON.stringify(z).length > 4500000) fehler(413, "Das Bild ist zu groß für die Vorschau.");
+        return { ok: true, id };
+      }
+      case "/api/eltern/hintergrund-loeschen":
+        z.eigene = (z.eigene || []).filter((h) => h.id !== d.id);
+        if (z.hintergrund === d.id) z.hintergrund = "standard";
+        speichern();
+        return { ok: true };
+      case "/api/eltern/bluetooth-liste":
+        await new Promise((r) => setTimeout(r, 1500));
+        return { geraete: [
+          { mac: "AA:BB:CC:DD:EE:01", name: "Kinder-Kopfhörer", audio: true, gekoppelt: !!z.bt_gekoppelt, verbunden: !!z.bt_gekoppelt },
+          { mac: "AA:BB:CC:DD:EE:02", name: "Handy von Papa", audio: false, gekoppelt: false, verbunden: false },
+        ] };
+      case "/api/eltern/bluetooth-verbinden":
+        await new Promise((r) => setTimeout(r, 1200));
+        z.bt_gekoppelt = d.mac === "AA:BB:CC:DD:EE:01";
+        speichern();
+        return { ok: true };
+      case "/api/eltern/bluetooth-entfernen":
+        z.bt_gekoppelt = false;
+        speichern();
         return { ok: true };
       case "/api/einrichtung":
         if (z.eingerichtet) fehler(409, "Der Stick ist bereits eingerichtet.");
