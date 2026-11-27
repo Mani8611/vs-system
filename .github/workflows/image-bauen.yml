@@ -21,12 +21,14 @@ jobs:
       - name: Python-Syntax prüfen
         run: |
           python3 -m py_compile dienst/kinderstick_dienst.py
+          python3 -m py_compile dienst/hoeren.py
           python3 -m py_compile image/dateien/usr/libexec/kinderstick/lernfenster
           python3 -m py_compile image/dateien/usr/libexec/kinderstick/fertigfenster
           python3 -m py_compile image/dateien/usr/lib/kinderstick/kopfleiste.py
       - name: JSON prüfen
         run: |
           python3 -m json.tool image/dateien/usr/share/kinderstick/apps.json > /dev/null
+          python3 -m json.tool image/dateien/usr/share/kinderstick/hoerreihen.json > /dev/null
           python3 -m json.tool image/dateien/etc/firefox/policies/policies.json > /dev/null
       - name: Shell-Skripte prüfen
         run: |
@@ -40,12 +42,44 @@ jobs:
         run: |
           KS_TESTMODUS=1 KS_DATEN="$RUNNER_TEMP/ks" KS_OBERFLAECHE=oberflaeche \
             KS_APPS=image/dateien/usr/share/kinderstick/apps.json \
+            KS_HOERREIHEN=image/dateien/usr/share/kinderstick/hoerreihen.json \
             python3 dienst/kinderstick_dienst.py &
           sleep 2
           curl -fsS http://127.0.0.1:8411/api/status
           curl -fsS -o /dev/null http://127.0.0.1:8411/index.html
           curl -fsS http://127.0.0.1:8411/api/lautstaerke
           curl -fsS -o /dev/null http://127.0.0.1:8411/apps/kamera.html
+          curl -fsS -o /dev/null http://127.0.0.1:8411/apps/hoerbuecher.html
+          curl -fsS http://127.0.0.1:8411/api/hoeren
+          curl -fsS -X POST -H "Content-Type: application/json" -d '{}' http://127.0.0.1:8411/api/hoeren-aktiv
+          # Hörbuch hochladen und mit Range wieder abholen (Einrichtung im Testmodus, PIN 1234)
+          j='-fsS -X POST -H Content-Type:application/json'
+          curl $j -d '{"kind_name":"Test","schulstufe":1,"pin":"1234","passwort":"testtest1"}' http://127.0.0.1:8411/api/einrichtung
+          token=$(curl $j -d '{"pin":"1234"}' http://127.0.0.1:8411/api/eltern/anmelden | python3 -c "import json,sys; print(json.load(sys.stdin)['token'])")
+          buch=$(curl $j -d "{\"token\":\"$token\",\"titel\":\"Testbuch\"}" http://127.0.0.1:8411/api/eltern/hoerbuch-neu | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])")
+          { printf 'ID3\x03\x00\x00\x00\x00\x00\x00'; head -c 200000 /dev/urandom; } > "$RUNNER_TEMP/kapitel.mp3"
+          curl -fsS -X POST -H "Content-Type: application/octet-stream" -H "X-Token: $token" -H "X-Hoerbuch: $buch" \
+            -H "X-Dateiname: 01%20Kapitel%20eins.mp3" --data-binary @"$RUNNER_TEMP/kapitel.mp3" http://127.0.0.1:8411/api/eltern/hoerbuch-datei
+          echo "falsch" > "$RUNNER_TEMP/falsch.mp3"
+          code=$(curl -sS -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/octet-stream" -H "X-Token: $token" \
+            -H "X-Hoerbuch: $buch" -H "X-Dateiname: falsch.mp3" --data-binary @"$RUNNER_TEMP/falsch.mp3" http://127.0.0.1:8411/api/eltern/hoerbuch-datei)
+          test "$code" = 400
+          liste=$(curl -fsS http://127.0.0.1:8411/api/hoeren)
+          echo "$liste"
+          url=$(echo "$liste" | python3 -c "import json,sys; print(json.load(sys.stdin)['buecher'][0]['kapitel'][0]['url'])")
+          test "$(curl -fsS -o /dev/null -r 100-199 -w '%{http_code} %{size_download}' "http://127.0.0.1:8411$url")" = "206 100"
+          curl $j -d "{\"token\":\"$token\"}" http://127.0.0.1:8411/api/eltern/uebersicht | python3 -c "import json,sys; print(json.load(sys.stdin)['hoeren'])"
+      - name: Hörspiel-Reihen erreichbar? (Internet – Fehler nur als Hinweis)
+        continue-on-error: true
+        run: |
+          for r in $(python3 -c "import json; print(' '.join(x['id'] for x in json.load(open('image/dateien/usr/share/kinderstick/hoerreihen.json'))))"); do
+            antwort=$(curl -sS "http://127.0.0.1:8411/api/hoerreihe?id=$r")
+            echo "$r: $(echo "$antwort" | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d.get('folgen', [])), 'Folgen –', d.get('titel') or d.get('fehler'))")"
+          done
+          # Erste Folge der ersten Reihe über den Dienst anspielen (Range → 206 erwartet)
+          url=$(curl -sS "http://127.0.0.1:8411/api/hoerreihe?id=ohrenbaer" | python3 -c "import json,sys; print(json.load(sys.stdin)['folgen'][0]['url'])")
+          curl -sS -o /dev/null -r 0-65535 -w "Folge durchgereicht: HTTP %{http_code}, %{size_download} Bytes, %{content_type}\n" "http://127.0.0.1:8411$url"
+          curl -sS -o /dev/null -w "Reihen-Bild: HTTP %{http_code}, %{content_type}\n" http://127.0.0.1:8411/hoerreihe-bild/ohrenbaer
 
   bauen:
     needs: pruefen

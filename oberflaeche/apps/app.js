@@ -18,12 +18,17 @@ const KsApp = {
   async pruefen(appId) {
     try {
       const s = await api("/api/status");
-      if (!s.eingerichtet || s.gesperrt || !s.apps.some((a) => a.id === appId)) {
+      const app = s.apps.find((a) => a.id === appId);
+      // Apps mit „auch_gesperrt“ (Hörbücher) bleiben in der Schlafenszeit und nach Zeitende offen
+      if (!s.eingerichtet || !app || (s.gesperrt && !app.auch_gesperrt)) {
         KsApp.zurueck();
         return;
       }
       KsApp.schulstufe = Math.min(4, Math.max(1, Number(s.schulstufe) || 1));
-      KsApp.zeitZeigen(s.rest_minuten, s.limit_minuten);
+      KsApp.gesperrt = s.gesperrt;
+      KsApp.grund = s.grund;
+      if (app.auch_gesperrt) KsApp.zeitZeigen(0, 0);   // zählt nicht zur Bildschirmzeit
+      else KsApp.zeitZeigen(s.rest_minuten, s.limit_minuten);
     } catch (e) { /* Dienst kurz nicht erreichbar – weiterspielen */ }
   },
 

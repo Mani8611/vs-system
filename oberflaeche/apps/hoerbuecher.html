@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hörbücher</title>
+  <link rel="stylesheet" href="../stil.css">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="hoerbuecher.css">
+</head>
+<body class="kind-app">
+  <header class="app-kopf">
+    <button id="zurueck" class="zurueck-knopf" type="button">⬅ Fertig</button>
+    <h1 id="titel">Hörbücher</h1>
+    <div class="app-kopf-rechts">
+      <button id="regal-knopf" class="kopf-knopf" type="button" title="Alle Hörbücher" aria-label="Alle Hörbücher" hidden>🏠</button>
+      <button id="timer-knopf" class="kopf-knopf timer-knopf" type="button" title="Einschlaf-Timer" aria-label="Einschlaf-Timer">🌙</button>
+    </div>
+  </header>
+
+  <!-- Regal: eigene Hörbücher und Hörspiel-Reihen -->
+  <main class="hoer-inhalt" id="regal">
+    <p class="hoer-hinweis" id="nacht-hinweis" hidden>🌙 Schlafenszeit – du kannst noch ein bisschen zuhören. Der Einschlaf-Timer ist an.</p>
+    <button class="weiter-karte" type="button" id="weiter" hidden>
+      <span class="weiter-symbol">▶</span>
+      <span><span class="weiter-klein">Weiterhören</span><span class="weiter-titel" id="weiter-titel"></span></span>
+    </button>
+
+    <h2 class="regal-titel">Meine Hörbücher</h2>
+    <p class="hoer-leer" id="buecher-leer" hidden>Noch keine Hörbücher auf dem Stick. Mama oder Papa können im Eltern-Bereich welche hochladen.</p>
+    <div class="regal" id="buecher"></div>
+
+    <h2 class="regal-titel" id="reihen-titel">Hörspiele <span class="regal-zusatz">(mit Internet)</span></h2>
+    <div class="regal" id="reihen"></div>
+    <p class="hoer-leer" id="laden-fehler" hidden></p>
+  </main>
+
+  <!-- Kapitel eines Hörbuchs oder Folgen einer Reihe -->
+  <main class="hoer-inhalt" id="liste" hidden>
+    <div class="liste-kopf">
+      <img class="liste-bild" id="liste-bild" alt="" hidden>
+      <div>
+        <h2 class="liste-titel" id="liste-titel"></h2>
+        <p class="liste-zusatz" id="liste-zusatz"></p>
+      </div>
+    </div>
+    <p class="hoer-leer" id="liste-meldung" hidden></p>
+    <ol class="folgen" id="folgen"></ol>
+  </main>
+
+  <!-- Abspieler unten -->
+  <footer class="spieler" id="spieler" hidden>
+    <img class="spieler-bild" id="spieler-bild" alt="" hidden>
+    <div class="spieler-mitte">
+      <div class="spieler-titel" id="spieler-titel"></div>
+      <div class="spieler-zeile">
+        <span class="spieler-zeit" id="zeit-jetzt">0:00</span>
+        <input type="range" id="position" min="0" max="100" step="1" value="0" aria-label="Stelle im Hörbuch">
+        <span class="spieler-zeit" id="zeit-gesamt">0:00</span>
+      </div>
+    </div>
+    <div class="spieler-knoepfe">
+      <button type="button" class="spieler-knopf" id="zurueck30" title="30 Sekunden zurück" aria-label="30 Sekunden zurück">⏪</button>
+      <button type="button" class="spieler-knopf gross" id="abspielen" title="Abspielen" aria-label="Abspielen">▶</button>
+      <button type="button" class="spieler-knopf" id="vor30" title="30 Sekunden vor" aria-label="30 Sekunden vor">⏩</button>
+      <button type="button" class="spieler-knopf" id="naechstes" title="Nächstes Kapitel" aria-label="Nächstes Kapitel">⏭</button>
+    </div>
+  </footer>
+
+  <dialog id="timer-dialog" class="timer-dialog">
+    <h2 class="pin-titel">🌙 Einschlaf-Timer</h2>
+    <p class="timer-text">Nach dieser Zeit wird es leise und hört auf.</p>
+    <div class="timer-wahl" id="timer-wahl"></div>
+    <button class="pin-abbrechen" type="button" id="timer-zu">Schließen</button>
+  </dialog>
+
+  <div class="gespeichert" id="hinweis" hidden></div>
+
+  <audio id="audio" preload="metadata"></audio>
+
+  <script src="../vorschau.js"></script>
+  <script src="../gemeinsam.js"></script>
+  <script src="app.js"></script>
+  <script src="hoerbuecher.js"></script>
+</body>
+</html>

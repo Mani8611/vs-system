@@ -59,6 +59,8 @@ body.kind { display: flex; flex-direction: column; user-select: none; overflow: 
 .sperre-symbol { font-size: 160px; line-height: 1; }
 .sperre h2 { font-size: 48px; margin: 24px 0 8px; color: var(--gruen); }
 .sperre p { font-size: 26px; margin: 0; color: var(--grau); }
+.sperre-apps { display: flex; justify-content: center; gap: 24px; margin-top: 32px; }
+.sperre-apps:empty { display: none; }
 
 .eltern-knopf {
   position: fixed; right: 16px; bottom: 16px; width: 56px; height: 56px; border-radius: 28px;
@@ -205,3 +207,9 @@ body.kind:not([data-hintergrund="standard"]) .sperre {
 .eigenes-bild button { position: absolute; right: 6px; top: 6px; border: none; border-radius: 8px; padding: 4px 8px;
   background: rgba(255, 255, 255, 0.9); cursor: pointer; font-size: 15px; }
 .datei-wahl { font-size: 16px; }
+
+/* ---------- Eltern: Hörbücher ---------- */
+.hoer-platz { font-size: 16px; font-weight: bold; color: var(--gruen); }
+.hoer-liste { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.hoer-neu { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 2px dashed #CFDDD5; border-radius: 12px; }
+.hoer-neu .knopf { align-self: flex-start; }

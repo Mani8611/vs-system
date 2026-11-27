@@ -67,7 +67,127 @@ async function laden() {
     zeile.append(box, `${app.symbol} ${app.name}`);
     liste.append(zeile);
   }
+  hoerenZeigen(u.hoeren);
 }
+
+// ---------- Hörbücher ----------
+function groesseText(bytes) {
+  return bytes >= 1e9 ? `${(bytes / 1e9).toFixed(1).replace(".", ",")} GB` : `${Math.max(1, Math.round(bytes / 1e6))} MB`;
+}
+
+function hoerenZeigen(h) {
+  if (!h) return;
+  // Ca. 30 MB je Stunde (MP3 mit 64 kbit/s, typisch für Hörbücher)
+  $("hoer-platz").textContent = `Noch frei für Hörbücher: ${groesseText(h.frei)} (etwa ${Math.floor(h.frei / 30e6)} Stunden). 3 GB bleiben für System-Updates reserviert.`;
+  const liste = $("hoer-liste");
+  liste.replaceChildren();
+  for (const buch of h.buecher) {
+    const zeile = document.createElement("div");
+    zeile.className = "bt-geraet";
+    const text = document.createElement("span");
+    text.textContent = `🎧 ${buch.titel} – ${buch.kapitel} ${buch.kapitel === 1 ? "Teil" : "Teile"}, ${groesseText(buch.bytes)}`;
+    const weg = document.createElement("button");
+    weg.type = "button";
+    weg.className = "knopf zweit";
+    weg.textContent = "Löschen";
+    weg.addEventListener("click", async () => {
+      if (weg.dataset.sicher !== "1") {   // zweimal tippen statt confirm()
+        weg.dataset.sicher = "1";
+        weg.textContent = "Wirklich löschen?";
+        setTimeout(() => { weg.dataset.sicher = ""; weg.textContent = "Löschen"; }, 5000);
+        return;
+      }
+      try {
+        await elternApi("/api/eltern/hoerbuch-loeschen", { id: buch.id });
+        meldung($("hoer-meldung"), `„${buch.titel}“ gelöscht.`, "ok");
+        laden();
+      } catch (e) {
+        meldung($("hoer-meldung"), e.message, "fehler");
+      }
+    });
+    zeile.append(text, weg);
+    liste.append(zeile);
+  }
+
+  const reihen = $("reihen-liste");
+  reihen.replaceChildren();
+  for (const r of h.reihen) {
+    const zeile = document.createElement("label");
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.value = r.id;
+    box.checked = r.an;
+    zeile.append(box, `${r.titel}${r.alter ? ` (${r.alter} Jahre)` : ""}`);
+    reihen.append(zeile);
+  }
+}
+
+let hoerAuswahl = [];
+function hoerAuswahlSetzen(dateien) {
+  const erlaubt = /\.(mp3|m4a|m4b|ogg|opus|jpe?g|png)$/i;
+  hoerAuswahl = [...dateien].filter((d) => erlaubt.test(d.name));
+  const ordner = [...dateien].find((d) => d.webkitRelativePath);
+  if (ordner && !$("hoer-titel").value.trim()) $("hoer-titel").value = ordner.webkitRelativePath.split("/")[0];
+  const bytes = hoerAuswahl.reduce((s, d) => s + d.size, 0);
+  const uebrig = dateien.length - hoerAuswahl.length;
+  $("hoer-auswahl").textContent = hoerAuswahl.length
+    ? `${hoerAuswahl.length} Dateien, zusammen ${groesseText(bytes)}${uebrig ? ` (${uebrig} andere Dateien werden übersprungen)` : ""}`
+    : "Keine passenden Dateien (MP3, M4A/M4B, OGG, JPG, PNG).";
+  $("hoer-hochladen").disabled = hoerAuswahl.length === 0;
+}
+$("hoer-dateien").addEventListener("change", () => hoerAuswahlSetzen($("hoer-dateien").files));
+$("hoer-ordner").addEventListener("change", () => hoerAuswahlSetzen($("hoer-ordner").files));
+
+/** Eine Datei roh hochladen (kein JSON – Hörbücher sind groß). */
+async function hoerDateiSenden(buchId, datei) {
+  if (window.KS_VORSCHAU_API) return window.KS_VORSCHAU_API("/api/eltern/hoerbuch-datei", { id: buchId, name: datei.name, groesse: datei.size }, true);
+  const antwort = await fetch("/api/eltern/hoerbuch-datei", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/octet-stream",
+      "X-Token": token, "X-Hoerbuch": buchId, "X-Dateiname": encodeURIComponent(datei.name),
+    },
+    body: datei,
+  });
+  let json = {};
+  try { json = await antwort.json(); } catch (e) { /* keine JSON-Antwort */ }
+  if (antwort.status === 401) zurueckZumKind();
+  if (!antwort.ok) throw new Error(json.fehler || "Fehler " + antwort.status);
+  return json;
+}
+
+$("hoer-hochladen").addEventListener("click", async () => {
+  const titel = $("hoer-titel").value.trim();
+  if (!titel) return meldung($("hoer-meldung"), "Bitte zuerst einen Titel eingeben.", "fehler");
+  $("hoer-hochladen").disabled = true;
+  try {
+    const { id } = await elternApi("/api/eltern/hoerbuch-neu", { titel });
+    let i = 0;
+    for (const datei of hoerAuswahl) {
+      i += 1;
+      meldung($("hoer-meldung"), `Lade hoch: ${i} von ${hoerAuswahl.length} – ${datei.name} …`);
+      await hoerDateiSenden(id, datei);
+    }
+    meldung($("hoer-meldung"), `„${titel}“ ist auf dem Stick.`, "ok");
+    $("hoer-titel").value = "";
+    $("hoer-auswahl").textContent = "";
+    hoerAuswahl = [];
+  } catch (e) {
+    meldung($("hoer-meldung"), e.message, "fehler");
+    $("hoer-hochladen").disabled = false;
+  }
+  laden();
+});
+
+$("reihen-speichern").addEventListener("click", async () => {
+  const an = [...document.querySelectorAll("#reihen-liste input:checked")].map((b) => b.value);
+  try {
+    await elternApi("/api/eltern/hoerreihen", { an });
+    meldung($("reihen-meldung"), "Gespeichert.", "ok");
+  } catch (e) {
+    meldung($("reihen-meldung"), e.message, "fehler");
+  }
+});
 
 // Bonuszeit
 document.querySelectorAll("[data-bonus]").forEach((knopf) => {

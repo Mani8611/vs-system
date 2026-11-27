@@ -24,6 +24,7 @@
     { id: "buchstaben", name: "Buchstaben", symbol: "🔤", seite: "apps/buchstaben.html" },
     { id: "merkspiel", name: "Merkspiel", symbol: "🧠", seite: "apps/merkspiel.html" },
     { id: "kamera", name: "Kamera", symbol: "📷", seite: "apps/kamera.html" },
+    { id: "hoerbuecher", name: "Hörbücher", symbol: "🎧", seite: "apps/hoerbuecher.html", auch_gesperrt: true },
     { id: "gcompris", name: "Lernspiele", symbol: "🧩", beschreibung: "GCompris: rund 195 Lernaktivitäten für 2- bis 10-Jährige – Buchstaben, Zählen, Uhr und Geld, Puzzles, Labyrinthe, Tiere, Musik. Auf dem Stick nur die Schwierigkeitsstufen passend zur Klasse, im Vollbild mit Kopfleiste (Fertig, Restzeit, einklappbar)." },
     { id: "anton", name: "ANTON", symbol: "📚", beschreibung: "ANTON: Lern-App nach Lehrplan – Deutsch, Mathematik, Sachunterricht. Die Klasse wird in ANTON gewählt. Braucht Internet." },
     { id: "netflix", name: "Netflix", symbol: "🎬", standard_aus: true, beschreibung: "Netflix im Kinderprofil, im Vollbild mit Kopfleiste (Fertig, Restzeit, einklappbar). Eigenes Abo nötig; Erwachsenen-Profile in Netflix mit PIN sperren. Erscheint erst, wenn die Eltern die Kachel freischalten." },
@@ -74,7 +75,14 @@
 
   const wochenende = () => [0, 6].includes(new Date().getDay());
   const limit = () => (wochenende() ? z.limit_wochenende : z.limit_schultag);
-  const kurz = (a) => ({ id: a.id, name: a.name, symbol: a.symbol });   // wie der echte Dienst
+  const kurz = (a) => ({ id: a.id, name: a.name, symbol: a.symbol, auch_gesperrt: !!a.auch_gesperrt });   // wie der echte Dienst
+  // Beispiel-Reihen für die Hörbücher (am Stick kommen sie aus image/dateien/usr/share/kinderstick/hoerreihen.json)
+  const REIHEN = [
+    { id: "ohrenbaer", titel: "Ohrenbär", alter: "4–8" },
+    { id: "betthupferl", titel: "Betthupferl", alter: "3–8" },
+    { id: "maus", titel: "Die Maus zum Hören", alter: "4–10" },
+    { id: "kakadu-hoerspiel", titel: "Kakadu – Das Kinderhörspiel", alter: "6–12" },
+  ];
   // Ohne Auswahl der Eltern: alle außer Netflix/Disney+ (standard_aus), wie am Stick
   const erlaubt = () => (z.erlaubte_apps
     ? APPS.filter((a) => z.erlaubte_apps.includes(a.id))
@@ -93,7 +101,8 @@
   let letzteZaehlung = Date.now();
   function zeitZaehlen() {
     const jetzt = Date.now();
-    const kinderSeite = document.body && (document.body.classList.contains("kind") || document.body.classList.contains("kind-app"));
+    const kinderSeite = document.body && (document.body.classList.contains("kind") || document.body.classList.contains("kind-app"))
+      && !location.pathname.endsWith("hoerbuecher.html");   // Hören zählt nicht
     if (z.eingerichtet && !zustand().gesperrt && kinderSeite) {
       z.minuten += (jetzt - letzteZaehlung) / 60000;
       speichern();
@@ -139,7 +148,9 @@
   window.KS_VORSCHAU_API = async function (pfad, d, post) {
     await new Promise((r) => setTimeout(r, 100));
     // Wie der Dienst: nur diese Adressen gibt es als GET, alles andere nur als POST
-    if (!post && !["/api/status", "/api/lautstaerke"].includes(pfad)) fehler(404, "Nicht gefunden.");
+    const abfrage = new URLSearchParams(pfad.split("?")[1] || "");
+    pfad = pfad.split("?")[0];
+    if (!post && !["/api/status", "/api/lautstaerke", "/api/hoeren", "/api/hoerreihe"].includes(pfad)) fehler(404, "Nicht gefunden.");
     zeitZaehlen();
     const s = zustand();
     switch (pfad) {
@@ -155,6 +166,48 @@
         speichern();
         return { ok: true };
       case "/api/ausschalten":
+        return { ok: true };
+      case "/api/hoeren-aktiv":
+        return { ok: true };
+      case "/api/hoeren": {
+        const aus = z.hoerreihen_aus || [];
+        return {
+          buecher: (z.hoerbuecher || []).filter((b) => b.kapitel.length).map((b) => ({
+            id: b.id, titel: b.titel, cover: null,
+            kapitel: b.kapitel.map((k) => ({ name: k.replace(/\.[^.]+$/, ""), url: "vorschau-kein-ton.mp3" })),
+          })),
+          reihen: REIHEN.filter((r) => !aus.includes(r.id)).map((r) => ({ id: r.id, titel: r.titel, bild: null })),
+          schlafenszeit: s.grund === "schlafenszeit",
+        };
+      }
+      case "/api/hoerreihe": {
+        const r = REIHEN.find((x) => x.id === abfrage.get("id"));
+        if (!r) fehler(404, "Diese Reihe gibt es nicht.");
+        return { titel: r.titel, folgen: [1, 2, 3, 4, 5].map((n) => ({
+          id: "folge" + n, titel: `${r.titel}: Beispielfolge ${n} (in der Vorschau ohne Ton)`, dauer: 600 + n * 120,
+          url: "vorschau-kein-ton.mp3" })) };
+      }
+      case "/api/eltern/hoerbuch-neu": {
+        const id = "hb-" + Math.random().toString(16).slice(2, 14).padEnd(12, "0");
+        z.hoerbuecher = (z.hoerbuecher || []).concat([{ id, titel: String(d.titel || "").trim(), kapitel: [], bytes: 0 }]);
+        speichern();
+        return { ok: true, id };
+      }
+      case "/api/eltern/hoerbuch-datei": {   // nur Name und Größe merken – keine echten Dateien
+        const b = (z.hoerbuecher || []).find((x) => x.id === d.id);
+        if (!b) fehler(404, "Dieses Hörbuch gibt es nicht.");
+        if (/\.(mp3|m4a|m4b|ogg|opus)$/i.test(d.name)) b.kapitel.push(d.name);
+        b.bytes += d.groesse || 0;
+        speichern();
+        return { ok: true, name: d.name };
+      }
+      case "/api/eltern/hoerbuch-loeschen":
+        z.hoerbuecher = (z.hoerbuecher || []).filter((b) => b.id !== d.id);
+        speichern();
+        return { ok: true };
+      case "/api/eltern/hoerreihen":
+        z.hoerreihen_aus = REIHEN.filter((r) => !d.an.includes(r.id)).map((r) => r.id);
+        speichern();
         return { ok: true };
       case "/api/lautstaerke":   // ohne „wert“ = Abfrage (in der Vorschau gibt es kein GET/POST)
         if ("wert" in d) z.lautstaerke = Math.max(0, Math.min(100, Number(d.wert)));
@@ -227,6 +280,11 @@
           schlafen_von: z.schlafen_von, schlafen_bis: z.schlafen_bis,
           heute: { gesperrt: s.gesperrt, grund: s.grund, rest_minuten: Math.floor(s.rest), limit_minuten: s.gesamt },
           tage, apps: APPS.map((a) => Object.assign({ erlaubt: frei.has(a.id) }, kurz(a))),
+          hoeren: {
+            buecher: (z.hoerbuecher || []).map((b) => ({ id: b.id, titel: b.titel, kapitel: b.kapitel.length, bytes: b.bytes })),
+            frei: 4.2e9,
+            reihen: REIHEN.map((r) => ({ id: r.id, titel: r.titel, alter: r.alter, an: !(z.hoerreihen_aus || []).includes(r.id) })),
+          },
         };
       }
       case "/api/eltern/bonus":

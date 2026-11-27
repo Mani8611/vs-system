@@ -32,9 +32,13 @@ import secrets
 import subprocess
 import threading
 import time
+import urllib.error
+import urllib.parse
 from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+
+import hoeren   # Hörbücher und Kinder-Hörspiele (dienst/hoeren.py, am Stick daneben installiert)
 
 PORT = 8411
 HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}
@@ -45,6 +49,9 @@ DATEN = Path(os.environ.get("KS_DATEN", "/var/lib/kinderstick"))
 EINST_DATEI = DATEN / "einstellungen.json"
 NUTZ_DATEI = DATEN / "nutzung.json"
 EIGENE_HG = DATEN / "hintergruende"     # eigene Hintergrundbilder (JPEG)
+HOERBUECHER = DATEN / "hoerbuecher"     # eigene Hörbücher (ein Ordner je Hörbuch)
+HOERREIHEN = Path(os.environ.get("KS_HOERREIHEN", "/usr/share/kinderstick/hoerreihen.json"))
+HOER_PAUSE = 70                        # Sekunden: so lange gilt das Kind nach dem letzten Lebenszeichen der Hörbücher als „hörend“
 EIGEN_ID = re.compile(r"eigen-[0-9a-f]{12}")
 MAC = re.compile(r"[0-9A-F]{2}(:[0-9A-F]{2}){5}")
 MAX_EIGENE_HG = 20
@@ -76,6 +83,7 @@ STANDARD = {
     "gesperrte_apps": [],        # von den Eltern gesperrte Apps; alle anderen sind frei
     "freigeschaltete_apps": [],  # Apps mit "standard_aus" (Netflix, Disney+), die die Eltern freigeschaltet haben
     "hintergrund": "standard",   # vom Kind gewählt (Datei in oberflaeche/hintergruende/)
+    "hoerreihen_aus": [],        # Hörspiel-Reihen aus dem Internet, die die Eltern ausgeschaltet haben
 }
 
 MIME = {
@@ -127,6 +135,8 @@ def apps_laden():
 einst = laden(EINST_DATEI, STANDARD)
 nutzung = laden(NUTZ_DATEI, {})
 APPS = apps_laden()
+hoer = hoeren.Hoeren(HOERBUECHER, HOERREIHEN)
+letzte_hoerzeit = 0.0   # letztes Lebenszeichen der Hörbücher (Hören zählt nicht zur Bildschirmzeit)
 
 
 # ---------------------------------------------------------------- Zeitlogik
@@ -366,7 +376,8 @@ def status():
             "schulstufe": einst["schulstufe"],
             "ausschalt_fehler": ausschalt_fehler,
             "uhrzeit": datetime.now().strftime("%H:%M"),   # Uhrzeit am Stick (Kontrolle bei der Einrichtung)
-            "apps": [{"id": a["id"], "name": a["name"], "symbol": a.get("symbol", "")}
+            "apps": [{"id": a["id"], "name": a["name"], "symbol": a.get("symbol", ""),
+                      "auch_gesperrt": bool(a.get("auch_gesperrt"))}
                      for a in erlaubte_apps()],
         }
 
@@ -418,7 +429,83 @@ def eltern_anmelden(d):
         return 200, {"token": token_neu()}
 
 
+def hoeren_eltern():
+    with sperre:
+        aus = set(einst.get("hoerreihen_aus") or [])
+    return {
+        "buecher": [{"id": b["id"], "titel": b["titel"], "kapitel": len(b["kapitel"]), "bytes": b["bytes"]}
+                    for b in hoer.buecher()],
+        "frei": hoer.frei(),
+        "reihen": [{"id": r["id"], "titel": r["titel"], "alter": r.get("alter", ""), "an": r["id"] not in aus}
+                   for r in hoer.reihen],
+    }
+
+
+def eltern_hoerreihen(d):
+    an = d.get("an")
+    if not isinstance(an, list) or not all(isinstance(i, str) for i in an):
+        return 400, {"fehler": "Ungültige Auswahl."}
+    with sperre:
+        einst["hoerreihen_aus"] = [r["id"] for r in hoer.reihen if r["id"] not in an]
+        speichern(EINST_DATEI, einst)
+    return 200, {"ok": True}
+
+
+def hoeren_aktiv():
+    """Lebenszeichen der geöffneten Hörbücher – solange es kommt, läuft keine Bildschirmzeit."""
+    global letzte_hoerzeit
+    if not hoeren_erlaubt():
+        return 403, {"fehler": "Hörbücher sind nicht freigegeben."}
+    letzte_hoerzeit = time.time()
+    return 200, {"ok": True}
+
+
+def hoeren_erlaubt():
+    with sperre:
+        return any(a["id"] == "hoerbuecher" for a in erlaubte_apps())
+
+
+def hoeren_kind():
+    """Regal für das Kind: eigene Hörbücher und die eingeschalteten Hörspiel-Reihen."""
+    if not hoeren_erlaubt():
+        return 403, {"fehler": "Hörbücher sind nicht freigegeben."}
+    with sperre:
+        aus = set(einst.get("hoerreihen_aus") or [])
+        grund = zustand()[1]
+    buecher = []
+    for b in hoer.buecher():
+        if not b["kapitel"]:
+            continue
+        basis = f"/hoerbuecher/{b['id']}/"
+        buecher.append({
+            "id": b["id"], "titel": b["titel"],
+            "cover": basis + urllib.parse.quote(b["cover"]) if b["cover"] else None,
+            "kapitel": [{"name": k.rsplit(".", 1)[0], "url": basis + urllib.parse.quote(k)} for k in b["kapitel"]],
+        })
+    reihen = [{"id": r["id"], "titel": r["titel"], "bild": f"/hoerreihe-bild/{r['id']}"}
+              for r in hoer.reihen if r["id"] not in aus]
+    return 200, {"buecher": buecher, "reihen": reihen, "schlafenszeit": grund == "schlafenszeit"}
+
+
+def hoeren_reihe(reihen_id):
+    if not hoeren_erlaubt():
+        return 403, {"fehler": "Hörbücher sind nicht freigegeben."}
+    with sperre:
+        if reihen_id in (einst.get("hoerreihen_aus") or []):
+            return 404, {"fehler": "Diese Reihe ist ausgeschaltet."}
+    try:
+        feed = hoer.reihe(reihen_id)
+    except (OSError, ValueError, hoeren.ET.ParseError):
+        return 502, {"fehler": "Die Hörspiele konnten nicht geladen werden. Ist das Internet verbunden?"}
+    if feed is None:
+        return 404, {"fehler": "Diese Reihe gibt es nicht."}
+    return 200, {"titel": feed["titel"],
+                 "folgen": [{"id": f["id"], "titel": f["titel"], "dauer": f["dauer"],
+                             "url": f"/hoerfolge/{reihen_id}/{f['id']}"} for f in feed["folgen"]]}
+
+
 def eltern_uebersicht():
+    hoer_stand = hoeren_eltern()
     with sperre:
         gesperrt, grund, rest, gesamt = zustand()
         tage = []
@@ -439,6 +526,7 @@ def eltern_uebersicht():
             "tage": tage,
             "apps": [{"id": a["id"], "name": a["name"], "symbol": a.get("symbol", ""),
                       "erlaubt": a["id"] in erlaubt} for a in APPS],
+            "hoeren": hoer_stand,
         }
 
 
@@ -710,11 +798,11 @@ def ausschalten():
 def kind_starten(d):
     with sperre:
         gesperrt, _, _, _ = zustand()
-        if gesperrt:
-            return 423, {"fehler": "Für heute ist Schluss."}
         app = next((a for a in erlaubte_apps() if a["id"] == d.get("app")), None)
     if not app:
         return 404, {"fehler": "Dieses Programm ist nicht freigegeben."}
+    if gesperrt and not app.get("auch_gesperrt"):   # Hörbücher gehen auch zur Schlafenszeit
+        return 423, {"fehler": "Für heute ist Schluss."}
     if app.get("seite"):
         # Eigenes Programm der Oberfläche – die Startseite wechselt selbst dorthin
         return 200, {"ok": True, "seite": app["seite"]}
@@ -731,7 +819,8 @@ def zeit_schleife():
         time.sleep(TAKT)
         with sperre:
             gesperrt, _, _, _ = zustand()
-            if einst["eingerichtet"] and not gesperrt and kind_aktiv():
+            hoert = time.time() - letzte_hoerzeit < HOER_PAUSE   # Hören zählt nicht
+            if einst["eingerichtet"] and not gesperrt and not hoert and kind_aktiv():
                 tag_eintrag()["minuten"] += TAKT / 60
                 zaehler += 1
                 if zaehler >= SPEICHERN_ALLE:
@@ -757,6 +846,9 @@ ELTERN_ROUTEN = {
     "/api/eltern/bluetooth-liste": lambda d: eltern_bluetooth_liste(),
     "/api/eltern/bluetooth-verbinden": eltern_bluetooth_verbinden,
     "/api/eltern/bluetooth-entfernen": eltern_bluetooth_entfernen,
+    "/api/eltern/hoerbuch-neu": lambda d: hoer.buch_neu(d.get("titel")),
+    "/api/eltern/hoerbuch-loeschen": lambda d: hoer.buch_loeschen(d.get("id")),
+    "/api/eltern/hoerreihen": eltern_hoerreihen,
 }
 
 
@@ -786,6 +878,87 @@ class Anfrage(BaseHTTPRequestHandler):
     def host_ok(self):
         return self.headers.get("Host", "") in HOSTS
 
+    def schreiben(self, quelle, laenge=None):
+        """Kopiert aus quelle (read(n)) zum Browser; bricht still ab, wenn der Browser abbricht."""
+        rest = laenge
+        try:
+            while rest is None or rest > 0:
+                stueck = quelle.read(1 << 16 if rest is None else min(rest, 1 << 16))
+                if not stueck:
+                    break
+                self.wfile.write(stueck)
+                if rest is not None:
+                    rest -= len(stueck)
+        except (BrokenPipeError, ConnectionResetError, TimeoutError, OSError):
+            self.close_connection = True
+
+    def datei_streamen(self, pfad, typ):
+        """Audio-/Bilddatei mit Range-Unterstützung (zum Spulen im Hörbuch)."""
+        groesse = pfad.stat().st_size
+        anfang, ende, code = 0, groesse - 1, 200
+        treffer = re.fullmatch(r"bytes=(\d*)-(\d*)", self.headers.get("Range", "").strip())
+        if treffer and (treffer.group(1) or treffer.group(2)):
+            if treffer.group(1):
+                anfang = int(treffer.group(1))
+                if treffer.group(2):
+                    ende = min(int(treffer.group(2)), groesse - 1)
+            else:
+                anfang = max(0, groesse - int(treffer.group(2)))
+            if anfang >= groesse or anfang > ende:
+                self.send_response(416)
+                self.send_header("Content-Range", f"bytes */{groesse}")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+            code = 206
+        self.send_response(code)
+        self.send_header("Content-Type", typ)
+        self.send_header("Content-Length", str(ende - anfang + 1))
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        if code == 206:
+            self.send_header("Content-Range", f"bytes {anfang}-{ende}/{groesse}")
+        self.end_headers()
+        with open(pfad, "rb") as f:
+            f.seek(anfang)
+            self.schreiben(f, ende - anfang + 1)
+
+    def folge_durchreichen(self, url):
+        """Hörspiel-Folge beim Sender holen und weitergeben (inkl. Spulen über Range)."""
+        try:
+            antwort = hoeren.audio_oeffnen(url, self.headers.get("Range"))
+        except urllib.error.HTTPError as fehler:
+            return self.json_antwort(416 if fehler.code == 416 else 502, {"fehler": "Folge nicht erreichbar."})
+        except OSError:
+            return self.json_antwort(502, {"fehler": "Kein Internet?"})
+        with antwort:
+            self.send_response(antwort.status)
+            typ = antwort.headers.get("Content-Type", "")
+            self.send_header("Content-Type", typ if typ.startswith("audio/") else "audio/mpeg")
+            for name in ("Content-Length", "Content-Range", "Accept-Ranges"):
+                if antwort.headers.get(name):
+                    self.send_header(name, antwort.headers[name])
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.end_headers()
+            self.schreiben(antwort)
+
+    def hoerbuch_hochladen(self):
+        """Rohe Datei (kein JSON, kann sehr groß sein). Kopfzeilen: X-Token, X-Hoerbuch, X-Dateiname."""
+        with sperre:
+            gueltig = token_gueltig(self.headers.get("X-Token"))
+        try:
+            laenge = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            laenge = -1
+        if not gueltig:
+            code, antwort = 401, {"fehler": "Bitte erneut mit PIN anmelden."}
+        else:
+            name = urllib.parse.unquote(self.headers.get("X-Dateiname", ""))
+            code, antwort = hoer.datei_speichern(self.headers.get("X-Hoerbuch", ""), name, laenge, self.rfile.read)
+        if code != 200:
+            self.close_connection = True   # Rest der Anfrage nicht mehr lesen
+        self.json_antwort(code, antwort)
+
     def do_GET(self):
         if not self.host_ok():
             return self.json_antwort(403, {"fehler": "Verboten."})
@@ -794,6 +967,30 @@ class Anfrage(BaseHTTPRequestHandler):
             return self.json_antwort(200, status())
         if pfad == "/api/lautstaerke":
             return self.json_antwort(*lautstaerke())
+        if pfad == "/api/hoeren":
+            return self.json_antwort(*hoeren_kind())
+        if pfad == "/api/hoerreihe":
+            abfrage = urllib.parse.parse_qs(self.path.partition("?")[2])
+            return self.json_antwort(*hoeren_reihe((abfrage.get("id") or [""])[0]))
+        if pfad.startswith("/hoerbuecher/") and pfad.count("/") == 3:
+            _, _, buch, name = pfad.split("/")
+            datei = hoer.datei_pfad(buch, urllib.parse.unquote(name))
+            if not datei or not hoeren_erlaubt():
+                return self.json_antwort(404, {"fehler": "Nicht gefunden."})
+            return self.datei_streamen(datei, hoeren.TYPEN[datei.suffix.lower()])
+        if pfad.startswith("/hoerfolge/") and pfad.count("/") == 3:
+            _, _, reihe, folge = pfad.split("/")
+            with sperre:
+                aus = reihe in (einst.get("hoerreihen_aus") or [])
+            url = None if aus or not hoeren_erlaubt() else hoer.folge_url(reihe, folge)
+            if not url:
+                return self.json_antwort(404, {"fehler": "Nicht gefunden."})
+            return self.folge_durchreichen(url)
+        if pfad.startswith("/hoerreihe-bild/"):
+            bild = hoer.reihen_bild(pfad.rsplit("/", 1)[1])
+            if not bild:
+                return self.json_antwort(404, {"fehler": "Nicht gefunden."})
+            return self.senden(200, bild[0], bild[1])
         if pfad.startswith("/eigene-hintergruende/"):
             name = pfad.rsplit("/", 1)[1].removesuffix(".jpg")
             datei = EIGENE_HG / f"{name}.jpg"
@@ -814,6 +1011,8 @@ class Anfrage(BaseHTTPRequestHandler):
         herkunft = self.headers.get("Origin")
         if herkunft and herkunft not in URSPRUENGE:
             return self.json_antwort(403, {"fehler": "Verboten."})
+        if self.path.split("?", 1)[0] == "/api/eltern/hoerbuch-datei":
+            return self.hoerbuch_hochladen()
         if not self.headers.get("Content-Type", "").startswith("application/json"):
             return self.json_antwort(415, {"fehler": "JSON erwartet."})
         try:
@@ -841,6 +1040,8 @@ class Anfrage(BaseHTTPRequestHandler):
                 code, antwort = lautstaerke_setzen(d)
             elif pfad == "/api/ausschalten":
                 code, antwort = ausschalten()
+            elif pfad == "/api/hoeren-aktiv":   # Lebenszeichen der Hörbücher: Zeit läuft nicht
+                code, antwort = hoeren_aktiv()
             elif pfad == "/api/einrichtung":
                 code, antwort = einrichten(d)
             elif pfad == "/api/eltern/anmelden":

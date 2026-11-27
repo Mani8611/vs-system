@@ -33,7 +33,7 @@ RUN dnf -y install \
 
 # Eigene Dateien: Systemkonfiguration, Dienst, Kinder-Oberfläche
 COPY image/dateien/ /
-COPY dienst/kinderstick_dienst.py /usr/lib/kinderstick/kinderstick_dienst.py
+COPY dienst/kinderstick_dienst.py dienst/hoeren.py /usr/lib/kinderstick/
 COPY oberflaeche/ /usr/share/kinderstick/oberflaeche/
 
 # Stick startet über den Standard-Pfad EFI/BOOT ohne Firmware-Eintrag (Erklärung im Skript)

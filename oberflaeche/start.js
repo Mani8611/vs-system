@@ -4,6 +4,7 @@
 const el = (id) => document.getElementById(id);
 let letzteApps = "";
 let letzterGrund = null;
+let letzteNochErlaubt = "";
 let letzteEigene = "";
 let eigeneHintergruende = [];   // [{id, url}] – eigene Bilder (Eltern-Bereich, Malen, Kamera)
 
@@ -58,27 +59,34 @@ async function aktualisieren() {
     }
     if (letzterGrund !== s.grund) vorlesen(el("sperre-titel").textContent);
   }
+  // Hörbücher (auch_gesperrt) bleiben in der Schlafenszeit und nach Zeitende erreichbar
+  const nochErlaubt = s.gesperrt ? s.apps.filter((a) => a.auch_gesperrt) : [];
+  const nochStand = JSON.stringify(nochErlaubt);
+  if (nochStand !== letzteNochErlaubt) {
+    el("sperre-apps").replaceChildren(...nochErlaubt.map(kachelBauen));
+    letzteNochErlaubt = nochStand;
+  }
   letzterGrund = s.gesperrt ? s.grund : null;
 }
 
 function kachelnZeichnen(apps) {
-  const bereich = el("kacheln");
-  bereich.replaceChildren();
-  for (const app of apps) {
-    const knopf = document.createElement("button");
-    knopf.type = "button";
-    knopf.className = "kachel";
-    const symbol = document.createElement("span");
-    symbol.className = "kachel-symbol";
-    symbol.textContent = app.symbol;
-    symbol.setAttribute("aria-hidden", "true");
-    const name = document.createElement("span");
-    name.className = "kachel-name";
-    name.textContent = app.name;
-    knopf.append(symbol, name);
-    knopf.addEventListener("click", () => starten(app));
-    bereich.append(knopf);
-  }
+  el("kacheln").replaceChildren(...apps.map(kachelBauen));
+}
+
+function kachelBauen(app) {
+  const knopf = document.createElement("button");
+  knopf.type = "button";
+  knopf.className = "kachel";
+  const symbol = document.createElement("span");
+  symbol.className = "kachel-symbol";
+  symbol.textContent = app.symbol;
+  symbol.setAttribute("aria-hidden", "true");
+  const name = document.createElement("span");
+  name.className = "kachel-name";
+  name.textContent = app.name;
+  knopf.append(symbol, name);
+  knopf.addEventListener("click", () => starten(app));
+  return knopf;
 }
 
 async function starten(app) {

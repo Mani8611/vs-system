@@ -150,3 +150,26 @@ Ergebnis Test 5: insgesamt gut. Probleme: Ausschalten tat wieder nichts (Startse
 - **Ausschalten – eigentliche Ursache:** Startseite und Eltern-Bereich riefen `api("/api/ausschalten")` ohne Daten auf. `api()` schickt dann einen GET, den gibt es für diese Adresse nicht → „Nicht gefunden“. Auf der Startseite wurde der Fehler nur „vorgelesen“ (Vorlesen ist aus), im Eltern-Bereich kam ein `alert` mit der Adresse als Überschrift. Behoben mit `api(…, {})`. Fehler erscheinen jetzt sichtbar. Die Vorschau unterscheidet jetzt GET und POST wie der Dienst (nur `/api/status` und `/api/lautstaerke` als GET).
 - **Eltern-Bereich:** Ausschalten durch zweimaliges Tippen statt `confirm()`.
 - **PIN-Eingabe über die Tastatur:** Ziffernreihe und Nummernblock (auch bei ausgeschaltetem NumLock über `e.code`), Rücktaste/Entf löscht, Enter = OK.
+
+## Neues Programm Hörbücher (27.11.2026)
+
+Wunsch nach Test 6: Hörbücher als eigenes Programm. Hören zählt nicht zur Bildschirmzeit und geht auch zur Schlafenszeit (und wenn die Zeit aufgebraucht ist).
+
+- **Kachel 🎧 „Hörbücher“** (`apps/hoerbuecher.html`, in `apps.json` `"auch_gesperrt": true`):
+  - Regal mit „Meine Hörbücher“ und „Hörspiele (mit Internet)“, Kapitel-/Folgenliste, Abspieler unten (±30 s, Kapitel weiter, Schieberegler).
+  - Merkt sich die Stelle je Datei (localStorage, max. 300) und zeigt „Weiterhören“. Hörbücher spielen das nächste Kapitel von selbst, Hörspiel-Reihen hören nach einer Folge auf.
+  - **Einschlaf-Timer** 🌙 (10–60 min, die letzten 20 s leiser). Zur Schlafenszeit startet er von selbst mit 30 min.
+- **Gesperrt (Schlafenszeit / Zeit um):** Die Startseite zeigt unter dem Hinweis nur die Kacheln mit `auch_gesperrt`. `kind_starten` lässt sie zu, `app.js` bleibt offen.
+- **Keine Zeitzählung:** Die Seite meldet sich alle 30 s mit `POST /api/hoeren-aktiv`. Solange das letzte Lebenszeichen weniger als 70 s zurückliegt, zählt `zeit_schleife` nicht.
+- **Eigene Hörbücher** (`dienst/hoeren.py`):
+  - Ablage `/var/lib/kinderstick/hoerbuecher/hb-<hex>/` (Titel in `info.json`), Kapitel nach Dateinamen „natürlich“ sortiert, erstes Bild = Cover.
+  - Hochladen im Eltern-Bereich (Dateien oder ganzer Ordner) als rohe Datei: `POST /api/eltern/hoerbuch-datei` mit den Kopfzeilen `X-Token`, `X-Hoerbuch` und `X-Dateiname`.
+  - Erlaubt sind MP3/M4A/M4B/OGG/OPUS/JPG/PNG mit Prüfung der ersten Bytes, höchstens 2 GB je Datei. **3 GB bleiben immer frei** für System-Updates.
+  - Auslieferung über `/hoerbuecher/<id>/<datei>` mit Range (Spulen).
+  - MP3 empfohlen: Firefox spielt MP3/OGG selbst, AAC (M4A/M4B) braucht ffmpeg im System (ungetestet).
+- **Hörspiele aus dem Internet:**
+  - Feste Liste `/usr/share/kinderstick/hoerreihen.json` mit öffentlich-rechtlichen Kinder-Podcasts: Ohrenbär, Betthupferl, Sandmännchen, Schlummerland, BR-Geschichten, Maus, Kakadu ×2, SRF Kids, Mumins, Figarino, ORF-Kinderreporter. Feed-Adressen stammen aus dem Apple-Podcast-Verzeichnis.
+  - Der Dienst lädt die Feeds (6 h Zwischenspeicher, neueste 80 Folgen) und reicht Bild (`/hoerreihe-bild/<id>`) und Audio (`/hoerfolge/<reihe>/<folge>`, Range wird weitergegeben) selbst durch. Firefox bleibt bei 127.0.0.1, CSP und Website-Filter unverändert. Das Kind kann nur Folgen dieser Reihen hören.
+  - Eltern schalten Reihen einzeln ab (`hoerreihen_aus`).
+  - Die CI prüft die Erreichbarkeit der Feeds nur als Hinweis (`continue-on-error`).
+- **Platz auf 16-GB-Sticks:** Das Abbild ist 14,25 GB groß, das System selbst belegt geschätzt 7–8 GB. Abzüglich 3 GB Reserve bleiben voraussichtlich 2–4 GB für Hörbücher (≈ 70–130 Stunden bei 64 kbit/s). Der Eltern-Bereich zeigt den echten Wert. Größere Sticks bringen derzeit nichts, weil die Partition nicht automatisch wächst.

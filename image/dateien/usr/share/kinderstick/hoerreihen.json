@@ -1,0 +1,14 @@
+[
+  { "id": "ohrenbaer", "titel": "Ohrenbär", "alter": "4–8", "feed": "https://www.ohrenbaer.de/podcast/podcast.feed.podcast.xml" },
+  { "id": "betthupferl", "titel": "Betthupferl", "alter": "3–8", "feed": "https://feeds.br.de/betthupferl/feed.xml" },
+  { "id": "sandmaennchen", "titel": "Unser Sandmännchen", "alter": "3–6", "feed": "https://www.antennebrandenburg.de/programm/hoeren/podcasts/Zappelduster_Podcast/podcast.feed.podcast.xml" },
+  { "id": "schlummerland", "titel": "Schlummerland", "alter": "3–7", "feed": "https://www.srf.ch/feed/podcast/sd/7431331f-01c4-4c53-8754-1cacb3bb5f9a.xml" },
+  { "id": "br-geschichten", "titel": "Geschichten für Kinder", "alter": "5–10", "feed": "https://feeds.br.de/geschichten-fuer-kinder/feed.xml" },
+  { "id": "maus", "titel": "Die Maus zum Hören", "alter": "4–10", "feed": "https://kinder.wdr.de/radio/diemaus/audio/diemaus-60/diemaus-60-106.podcast" },
+  { "id": "kakadu-hoerspiel", "titel": "Kakadu – Das Kinderhörspiel", "alter": "6–12", "feed": "https://www.kakadu.de/kinderhoerspiel-118.xml" },
+  { "id": "kakadu", "titel": "Kakadu – Der Kinderpodcast", "alter": "6–12", "feed": "https://www.kakadu.de/kakadu-104.xml" },
+  { "id": "srf-hoerspiele", "titel": "SRF Kids Hörspiele", "alter": "6–12", "feed": "https://www.srf.ch/feed/podcast/sd/88072903-e34f-4f51-a9b9-052562d049c2.xml" },
+  { "id": "mumins", "titel": "Die Mumins", "alter": "6–12", "feed": "https://www1.wdr.de/mediathek/audio/wdr/mumins/mumins-hoerspiel-100.podcast" },
+  { "id": "figarino", "titel": "Figarinos Fahrradladen", "alter": "6–10", "feed": "https://www.mdr.de/tweens/podcast/figarino/fahrradladen-mdr-100.xml" },
+  { "id": "kinderreporter", "titel": "Die Kinderreporter (ORF)", "alter": "6–12", "feed": "https://podcast.orf.at/podcast/stm/stm_kinderreporter/stm_kinderreporter.xml" }
+]

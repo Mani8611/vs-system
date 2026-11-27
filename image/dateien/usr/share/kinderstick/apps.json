@@ -35,6 +35,14 @@
     "seite": "apps/kamera.html"
   },
   {
+    "id": "hoerbuecher",
+    "name": "Hörbücher",
+    "symbol": "🎧",
+    "beschreibung": "Eigenes Hörbuch-Programm: Hörbücher, die Sie im Eltern-Bereich auf den Stick laden, und kostenlose Kinder-Hörspiele öffentlich-rechtlicher Sender (Internet nötig, Reihen einzeln abschaltbar). Merkt sich die Stelle, Einschlaf-Timer. Zählt nicht zur Bildschirmzeit und geht auch zur Schlafenszeit.",
+    "seite": "apps/hoerbuecher.html",
+    "auch_gesperrt": true
+  },
+  {
     "id": "gcompris",
     "name": "Lernspiele",
     "symbol": "🧩",

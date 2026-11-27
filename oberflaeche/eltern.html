@@ -96,6 +96,36 @@
     </section>
 
     <section class="karte">
+      <h2>Hörbücher</h2>
+      <p class="hinweis">Eigene Hörbücher für das Programm 🎧 „Hörbücher“ (zählt nicht zur Bildschirmzeit, geht auch zur Schlafenszeit). Am besten MP3-Dateien, z. B. gekaufte Downloads oder selbst gerippte CDs. Ein Hörbuch = Titel + alle Teile (Reihenfolge nach Dateinamen, z. B. „01 …“, „02 …“); ein Bild (JPG/PNG) wird zum Cover.</p>
+      <p class="hoer-platz" id="hoer-platz"></p>
+      <div class="hoer-liste" id="hoer-liste"></div>
+      <div class="hoer-neu">
+        <div class="feld">
+          <label for="hoer-titel">Titel des neuen Hörbuchs</label>
+          <input id="hoer-titel" type="text" maxlength="80" placeholder="z. B. Die kleine Hexe">
+        </div>
+        <div class="knopf-reihe">
+          <label class="knopf zweit datei-wahl" for="hoer-dateien">Dateien wählen …</label>
+          <input id="hoer-dateien" type="file" multiple accept=".mp3,.m4a,.m4b,.ogg,.opus,.jpg,.jpeg,.png,audio/*" hidden>
+          <label class="knopf zweit datei-wahl" for="hoer-ordner">Ganzen Ordner wählen …</label>
+          <input id="hoer-ordner" type="file" webkitdirectory hidden>
+        </div>
+        <p class="hinweis" id="hoer-auswahl"></p>
+        <button class="knopf" type="button" id="hoer-hochladen" disabled>Hochladen</button>
+      </div>
+      <p class="meldung" id="hoer-meldung" aria-live="polite"></p>
+    </section>
+
+    <section class="karte">
+      <h2>Hörspiele aus dem Internet</h2>
+      <p class="hinweis">Kostenlose Kinder-Hörspiele und -Podcasts öffentlich-rechtlicher Sender. Das Kind sieht nur die Folgen dieser Reihen und kann nicht frei im Internet surfen. Braucht WLAN. Ausgeschaltete Reihen erscheinen nicht.</p>
+      <div class="app-liste" id="reihen-liste"></div>
+      <button class="knopf" type="button" id="reihen-speichern">Speichern</button>
+      <p class="meldung" id="reihen-meldung" aria-live="polite"></p>
+    </section>
+
+    <section class="karte">
       <h2>Fertig?</h2>
       <div class="knopf-reihe">
         <button class="knopf" type="button" id="zurueck">Zurück zum Kind</button>
