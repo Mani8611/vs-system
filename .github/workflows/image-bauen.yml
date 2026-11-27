@@ -22,6 +22,7 @@ jobs:
         run: |
           python3 -m py_compile dienst/kinderstick_dienst.py
           python3 -m py_compile image/dateien/usr/libexec/kinderstick/lernfenster
+          python3 -m py_compile image/dateien/usr/libexec/kinderstick/videofenster
       - name: JSON prüfen
         run: |
           python3 -m json.tool image/dateien/usr/share/kinderstick/apps.json > /dev/null

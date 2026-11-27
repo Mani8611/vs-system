@@ -1,0 +1,18 @@
+/* Kinder-Stick – Merkspiel */
+.feld { display: grid; gap: 16px; }
+.karte-m {
+  width: 130px; height: 130px; border: none; border-radius: 22px; cursor: pointer; padding: 0;
+  perspective: 600px; background: transparent;
+}
+.karte-m .innen {
+  position: relative; display: block; width: 100%; height: 100%;
+  transition: transform 0.35s; transform-style: preserve-3d;
+}
+.karte-m.offen .innen, .karte-m.gefunden .innen { transform: rotateY(180deg); }
+.karte-m .vorne, .karte-m .hinten {
+  position: absolute; inset: 0; border-radius: 22px; backface-visibility: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.karte-m .hinten { background: #4D96FF; box-shadow: 0 6px 0 #2F6FD1; font-size: 54px; color: rgba(255, 255, 255, 0.85); }
+.karte-m .vorne { background: var(--weiss); box-shadow: 0 6px 0 #E5DCCB; transform: rotateY(180deg); font-size: 76px; }
+.karte-m.gefunden .vorne { background: #DFF5E3; box-shadow: 0 6px 0 #6BCB77; }

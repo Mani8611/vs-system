@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Buchstaben</title>
+  <link rel="stylesheet" href="../stil.css">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="buchstaben.css">
+</head>
+<body class="kind-app">
+  <header class="app-kopf">
+    <button id="zurueck" class="zurueck-knopf" type="button">⬅ Fertig</button>
+    <h1>🔤 Buchstaben</h1>
+    <div class="app-kopf-rechts"><span class="sterne" id="sterne">⭐ 0</span></div>
+  </header>
+
+  <main class="app-inhalt" id="auswahl">
+    <h2 class="wahl-titel">Was möchtest du spielen?</h2>
+    <div class="wahl-karten">
+      <button class="wahl-karte farbe-1" type="button" id="wahl-anlaut">
+        <span class="gross">A</span><span>Anfangsbuchstabe</span><span class="klein">Womit fängt es an?</span>
+      </button>
+      <button class="wahl-karte farbe-2" type="button" id="wahl-lesen">
+        <span class="gross">📖</span><span>Wörter lesen</span><span class="klein">Welches Bild passt?</span>
+      </button>
+    </div>
+  </main>
+
+  <main class="app-inhalt" id="spiel" hidden>
+    <div class="fortschritt" id="fortschritt"></div>
+    <p class="frage" id="frage"></p>
+    <div class="vorgabe" id="vorgabe"></div>
+    <div class="bilder" id="bilder"></div>
+    <p class="lob" id="lob"></p>
+  </main>
+
+  <main class="app-inhalt" id="ende" hidden>
+    <div class="geschafft">
+      <div class="gross" id="ende-symbol">🏆</div>
+      <h2 id="ende-titel">Geschafft!</h2>
+      <p id="ende-text"></p>
+      <button class="knopf-gross" type="button" id="nochmal">Nochmal</button>
+      <button class="knopf-gross zweit" type="button" id="andere">Etwas anderes</button>
+    </div>
+  </main>
+
+  <script src="../vorschau.js"></script>
+  <script src="../gemeinsam.js"></script>
+  <script src="app.js"></script>
+  <script src="buchstaben.js"></script>
+</body>
+</html>

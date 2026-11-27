@@ -59,7 +59,9 @@ STANDARD = {
     "limit_wochenende": 90,      # Minuten (Samstag, Sonntag)
     "schlafen_von": "19:30",
     "schlafen_bis": "07:00",
-    "erlaubte_apps": None,       # None = alle Apps aus apps.json
+    "erlaubte_apps": None,       # altes Format, wird nicht mehr geschrieben
+    "gesperrte_apps": [],        # von den Eltern gesperrte Apps; alle anderen sind frei
+    "freigeschaltete_apps": [],  # Apps mit "standard_aus" (Netflix, Disney+), die die Eltern freigeschaltet haben
     "hintergrund": "standard",   # vom Kind gewählt (Datei in oberflaeche/hintergruende/)
 }
 
@@ -165,9 +167,12 @@ def alte_tage_entfernen():
 
 
 def erlaubte_apps():
-    if einst["erlaubte_apps"] is None:
-        return APPS
-    return [a for a in APPS if a["id"] in einst["erlaubte_apps"]]
+    # Das ältere Format „erlaubte_apps“ (nur Test-Sticks) wird ignoriert: die App-Liste hat sich geändert
+    # Apps mit "standard_aus" (Netflix, Disney+: eigenes Abo nötig) erst nach Freischaltung durch die Eltern
+    gesperrt = set(einst.get("gesperrte_apps") or [])
+    frei = set(einst.get("freigeschaltete_apps") or [])
+    return [a for a in APPS
+            if (a["id"] in frei if a.get("standard_aus") else a["id"] not in gesperrt)]
 
 
 # ---------------------------------------------------------------- Systembefehle
@@ -193,6 +198,8 @@ def kind_aktiv():
 
 def apps_beenden():
     for app in APPS:
+        if not app.get("befehl"):
+            continue   # eigene Programme der Oberfläche kehren selbst zur Startseite zurück
         prog = os.path.basename(app["befehl"][0])[:15]   # Prozessname ist auf 15 Zeichen gekürzt
         try:
             ausfuehren(["pkill", "-u", KIND, "-x", prog], zeit=5)
@@ -201,13 +208,15 @@ def apps_beenden():
 
 
 def app_starten(app):
+    # Zusätzliche Startoptionen je Schulstufe (z. B. GCompris: Schwierigkeit passend zur Klasse)
+    befehl = list(app["befehl"]) + list(app.get("optionen_nach_klasse", {}).get(str(einst["schulstufe"]), []))
     if TESTMODUS:
-        print("TEST – App-Start:", app["befehl"], flush=True)
+        print("TEST – App-Start:", befehl, flush=True)
         return True
     try:
         subprocess.Popen(
             ["systemd-run", "--user", "--machine", f"{KIND}@.host", "--collect", "--quiet",
-             "--", *app["befehl"]],
+             "--", *befehl],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return True
     except OSError:
@@ -338,6 +347,8 @@ def status():
             "limit_minuten": int(gesamt),
             "schlafen_bis": einst["schlafen_bis"],
             "hintergrund": einst.get("hintergrund", "standard"),
+            "schulstufe": einst["schulstufe"],
+            "uhrzeit": datetime.now().strftime("%H:%M"),   # Uhrzeit am Stick (Kontrolle bei der Einrichtung)
             "apps": [{"id": a["id"], "name": a["name"], "symbol": a.get("symbol", "")}
                      for a in erlaubte_apps()],
         }
@@ -438,8 +449,10 @@ def eltern_einstellungen(d):
             ids = d["erlaubte_apps"]
             if not isinstance(ids, list) or not all(isinstance(i, str) for i in ids):
                 return 400, {"fehler": "Ungültige App-Liste."}
-            bekannt = {a["id"] for a in APPS}
-            neu["erlaubte_apps"] = [i for i in ids if i in bekannt]
+            # Gespeichert wird, was GESPERRT ist – neue Programme (Update) sind so automatisch frei
+            neu["gesperrte_apps"] = [a["id"] for a in APPS if a["id"] not in ids]
+            neu["freigeschaltete_apps"] = [a["id"] for a in APPS if a.get("standard_aus") and a["id"] in ids]
+            neu["erlaubte_apps"] = None
         if d.get("pin_neu"):
             if not pin_gueltig(d["pin_neu"]):
                 return 400, {"fehler": "Die neue PIN muss aus 4 bis 8 Ziffern bestehen."}
@@ -504,6 +517,9 @@ def kind_starten(d):
         app = next((a for a in erlaubte_apps() if a["id"] == d.get("app")), None)
     if not app:
         return 404, {"fehler": "Dieses Programm ist nicht freigegeben."}
+    if app.get("seite"):
+        # Eigenes Programm der Oberfläche – die Startseite wechselt selbst dorthin
+        return 200, {"ok": True, "seite": app["seite"]}
     if not app_starten(app):
         return 500, {"fehler": "Das Programm konnte nicht gestartet werden."}
     return 200, {"ok": True}

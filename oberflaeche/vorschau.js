@@ -17,15 +17,16 @@
 
   const SCHLUESSEL = "kinderstick-vorschau";
   // Gleiche Liste wie image/dateien/usr/share/kinderstick/apps.json (ohne Startbefehle)
+  // „seite“: eigenes Programm der Oberfläche – läuft auch in der Vorschau echt
   const APPS = [
-    { id: "gcompris", name: "Lernspiele", symbol: "🧩", beschreibung: "GCompris: rund 195 Lernaktivitäten für 2- bis 10-Jährige – Maus und Tastatur, Buchstaben, Zählen und Rechnen, Uhr und Geld, Memory, Puzzles, Labyrinthe, Tiere, Musik." },
-    { id: "tuxpaint", name: "Malen", symbol: "🎨", beschreibung: "Tux Paint: Malprogramm für Kinder – Pinsel, Stempel, Formen, Text und Zaubereffekte, mit lustigen Geräuschen. Bilder bleiben gespeichert." },
-    { id: "anton", name: "ANTON lernen", symbol: "📚", beschreibung: "ANTON: Lern-App nach Lehrplan – Deutsch, Mathematik, Sachunterricht, Musik. Braucht Internet und ein (kostenloses) Konto." },
-    { id: "klettres", name: "Buchstaben", symbol: "🔤", beschreibung: "KLettres: Buchstaben und Silben hören und eintippen, für Leseanfänger. Deutsche Sprachausgabe vorhanden (spricht teils Buchstabennamen statt Laute – vor Einsatz prüfen)." },
-    { id: "tuxmath", name: "Rechnen", symbol: "➕", beschreibung: "Tux Math: Rechenaufgaben als Spiel – Kometen mit Aufgaben abwehren, bevor sie landen. Schwierigkeit einstellbar." },
-    { id: "tuxtype", name: "Tippen lernen", symbol: "⌨️", beschreibung: "Tux Typing: Tastatur spielerisch kennenlernen – herabfallende Fische mit dem richtigen Buchstaben fangen." },
-    { id: "ktuberling", name: "Kartoffelmann", symbol: "🥔", beschreibung: "KTuberling: Kartoffelmännchen anziehen und Szenen gestalten – Teile werden beim Ablegen vorgelesen. Für die Kleinsten." },
-    { id: "blinken", name: "Merkspiel", symbol: "🧠", beschreibung: "Blinken: Farben und Töne in der richtigen Reihenfolge nachspielen – trainiert das Gedächtnis." },
+    { id: "malen", name: "Malen", symbol: "🎨", seite: "apps/malen.html" },
+    { id: "rechnen", name: "Rechnen", symbol: "➕", seite: "apps/rechnen.html" },
+    { id: "buchstaben", name: "Buchstaben", symbol: "🔤", seite: "apps/buchstaben.html" },
+    { id: "merkspiel", name: "Merkspiel", symbol: "🧠", seite: "apps/merkspiel.html" },
+    { id: "gcompris", name: "Lernspiele", symbol: "🧩", beschreibung: "GCompris: rund 195 Lernaktivitäten für 2- bis 10-Jährige – Buchstaben, Zählen, Uhr und Geld, Puzzles, Labyrinthe, Tiere, Musik. Auf dem Stick nur die Schwierigkeitsstufen passend zur Klasse." },
+    { id: "anton", name: "ANTON", symbol: "📚", beschreibung: "ANTON: Lern-App nach Lehrplan – Deutsch, Mathematik, Sachunterricht. Die Klasse wird in ANTON gewählt. Braucht Internet." },
+    { id: "netflix", name: "Netflix", symbol: "🎬", standard_aus: true, beschreibung: "Netflix im Kinderprofil, im Vollbild mit „Fertig“-Knopf oben links. Eigenes Abo nötig; Erwachsenen-Profile in Netflix mit PIN sperren. Erscheint erst, wenn die Eltern die Kachel freischalten." },
+    { id: "disney", name: "Disney+", symbol: "🏰", standard_aus: true, beschreibung: "Disney+ im Kinderprofil, im Vollbild mit „Fertig“-Knopf oben links. Eigenes Abo nötig; Erwachsenen-Profile in Disney+ mit PIN sperren. Erscheint erst, wenn die Eltern die Kachel freischalten." },
   ];
   const STANDARD = {
     eingerichtet: false, kind_name: "", schulstufe: 1, pin: "",
@@ -47,6 +48,8 @@
   }
 
   let z = laden();
+  // Gespeicherte Freigaben aus einer älteren App-Liste verwerfen
+  if (z.erlaubte_apps && z.erlaubte_apps.some((id) => !APPS.some((a) => a.id === id))) z.erlaubte_apps = null;
   const ansicht = new URLSearchParams(location.search).get("vorschau");
   if (ansicht === "neu") z = Object.assign({}, STANDARD);
   if (ansicht === "fertig") z = Object.assign({}, STANDARD, BEISPIEL);
@@ -58,10 +61,20 @@
   }
   speichern();
 
+  // index.html?vorschau=fertig&weiter=apps/malen.html – Beispielkind anlegen und direkt ins Programm
+  const weiter = new URLSearchParams(location.search).get("weiter");
+  if (weiter && /^apps\/[a-z]+\.html$/.test(weiter)) {
+    location.replace(weiter);
+    return;
+  }
+
   const wochenende = () => [0, 6].includes(new Date().getDay());
   const limit = () => (wochenende() ? z.limit_wochenende : z.limit_schultag);
   const kurz = (a) => ({ id: a.id, name: a.name, symbol: a.symbol });   // wie der echte Dienst
-  const erlaubt = () => (z.erlaubte_apps ? APPS.filter((a) => z.erlaubte_apps.includes(a.id)) : APPS).map(kurz);
+  // Ohne Auswahl der Eltern: alle außer Netflix/Disney+ (standard_aus), wie am Stick
+  const erlaubt = () => (z.erlaubte_apps
+    ? APPS.filter((a) => z.erlaubte_apps.includes(a.id))
+    : APPS.filter((a) => !a.standard_aus)).map(kurz);
 
   // In der Vorschau zählt nur die simulierte Schlafenszeit – nicht die echte Uhrzeit.
   function zustand() {
@@ -76,7 +89,8 @@
   let letzteZaehlung = Date.now();
   function zeitZaehlen() {
     const jetzt = Date.now();
-    if (z.eingerichtet && !zustand().gesperrt && document.body && document.body.classList.contains("kind")) {
+    const kinderSeite = document.body && (document.body.classList.contains("kind") || document.body.classList.contains("kind-app"));
+    if (z.eingerichtet && !zustand().gesperrt && kinderSeite) {
       z.minuten += (jetzt - letzteZaehlung) / 60000;
       speichern();
     }
@@ -127,7 +141,8 @@
         return {
           eingerichtet: z.eingerichtet, kind_name: z.kind_name, gesperrt: s.gesperrt, grund: s.grund,
           rest_minuten: Math.floor(s.rest), limit_minuten: s.gesamt, schlafen_bis: z.schlafen_bis, apps: erlaubt(),
-          hintergrund: z.hintergrund || "standard",
+          hintergrund: z.hintergrund || "standard", schulstufe: z.schulstufe,
+          uhrzeit: new Date().toTimeString().slice(0, 5),
         };
       case "/api/hintergrund":
         z.hintergrund = d.hintergrund;
@@ -149,6 +164,8 @@
         if (s.gesperrt) fehler(423, "Für heute ist Schluss.");
         const app = erlaubt().find((a) => a.id === d.app);
         if (!app) fehler(404, "Dieses Programm ist nicht freigegeben.");
+        const eintrag = APPS.find((a) => a.id === app.id);
+        if (eintrag.seite) return { ok: true, seite: eintrag.seite };
         appFensterZeigen(app);
         return { ok: true };
       }
@@ -221,6 +238,17 @@
     knopf("🌙 Schlafenszeit an/aus", () => { z.schlafen_simuliert = !z.schlafen_simuliert; });
     knopf("↺ Zeit zurücksetzen", () => { z.minuten = 0; z.bonus = 0; z.schlafen_simuliert = false; });
     knopf("⟲ Ganz neu beginnen", () => { z = Object.assign({}, STANDARD); speichern(); location.href = "index.html"; });
+    const klasse = document.createElement("select");
+    klasse.title = "Klasse des Kindes (für Rechnen, Buchstaben, Merkspiel)";
+    for (let k = 1; k <= 4; k++) {
+      const o = document.createElement("option");
+      o.value = k;
+      o.textContent = `${k}. Klasse`;
+      o.selected = Number(z.schulstufe) === k;
+      klasse.append(o);
+    }
+    klasse.addEventListener("change", () => { z.schulstufe = Number(klasse.value); speichern(); });
+    leiste.append(klasse);
     const pin = document.createElement("span");
     pin.textContent = z.pin ? `Eltern-PIN: ${z.pin}` : "";
     leiste.append(pin);

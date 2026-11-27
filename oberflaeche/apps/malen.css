@@ -1,0 +1,48 @@
+/* Kinder-Stick – Malen */
+.mal-bereich { flex: 1; display: flex; gap: 16px; padding: 16px; min-height: 0; }
+
+.werkzeuge, .farben {
+  display: flex; flex-direction: column; gap: 12px; align-items: center;
+  background: var(--weiss); border-radius: 24px; padding: 14px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+.werkzeug, .groesse {
+  width: 76px; height: 76px; border: none; border-radius: 20px; cursor: pointer;
+  background: var(--hell); font-size: 40px; display: flex; align-items: center; justify-content: center;
+}
+.werkzeug.aktiv, .groesse.aktiv { background: var(--gelb); box-shadow: inset 0 0 0 4px var(--gruen); }
+.trenner { width: 60px; height: 3px; background: var(--hell); border-radius: 2px; }
+.punkt { display: block; border-radius: 50%; background: var(--text); }
+.p1 { width: 10px; height: 10px; }
+.p2 { width: 22px; height: 22px; }
+.p3 { width: 38px; height: 38px; }
+
+.farben { display: grid; grid-template-columns: repeat(2, 60px); align-content: start; }
+.farbe { width: 60px; height: 60px; border-radius: 50%; border: 4px solid var(--weiss); cursor: pointer;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.12); }
+.farbe.aktiv { box-shadow: 0 0 0 5px var(--gruen); transform: scale(1.08); }
+
+.leinwand-rahmen { flex: 1; min-width: 0; background: var(--weiss); border-radius: 24px; overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1); }
+#leinwand { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+
+.stempel-leiste {
+  position: fixed; left: 120px; top: 50%; transform: translateY(-50%); z-index: 5;
+  display: grid; grid-template-columns: repeat(4, 76px); gap: 10px; padding: 16px;
+  background: var(--weiss); border-radius: 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+.stempel-leiste button { width: 76px; height: 76px; border: none; border-radius: 18px; background: var(--hell);
+  font-size: 44px; cursor: pointer; }
+.stempel-leiste button.aktiv { background: var(--gelb); }
+
+.bilder-dialog { max-width: 900px; }
+.bilder-leer { font-size: 20px; color: var(--grau); text-align: center; }
+.bilder-liste { display: grid; grid-template-columns: repeat(3, 240px); gap: 16px; max-height: 60vh; overflow-y: auto; }
+.bilder-liste button { border: none; padding: 0; border-radius: 14px; overflow: hidden; cursor: pointer;
+  box-shadow: 0 0 0 3px var(--hell); background: var(--weiss); }
+.bilder-liste img { display: block; width: 240px; height: 150px; object-fit: contain; }
+
+.gespeichert {
+  position: fixed; left: 50%; top: 110px; transform: translateX(-50%); z-index: 10;
+  background: var(--gruen); color: var(--weiss); font-size: 28px; font-weight: bold;
+  padding: 14px 32px; border-radius: 20px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}

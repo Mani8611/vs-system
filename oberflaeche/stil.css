@@ -129,8 +129,8 @@ input:focus, select:focus { outline: none; border-color: var(--mint); }
 
 /* ---------- Nur Vorschau-Modus (file://) ---------- */
 .vorschau-leiste {
-  position: fixed; left: 16px; bottom: 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-  max-width: calc(100% - 110px); padding: 8px 12px; border-radius: 12px;
+  position: fixed; left: 160px; bottom: 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  max-width: calc(100% - 250px); padding: 8px 12px; border-radius: 12px;
   background: rgba(31, 41, 51, 0.88); color: var(--weiss); font-size: 14px; z-index: 50;
 }
 .vorschau-leiste button { font: inherit; font-size: 14px; padding: 6px 10px; border: none; border-radius: 8px; background: var(--weiss); color: var(--text); cursor: pointer; }

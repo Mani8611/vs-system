@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Malen</title>
+  <link rel="stylesheet" href="../stil.css">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="malen.css">
+</head>
+<body class="kind-app">
+  <header class="app-kopf">
+    <button id="zurueck" class="zurueck-knopf" type="button">⬅ Fertig</button>
+    <h1>🎨 Malen</h1>
+    <div class="app-kopf-rechts">
+      <button id="rueckgaengig" class="kopf-knopf" type="button" title="Rückgängig" aria-label="Rückgängig">↩️</button>
+      <button id="neu" class="kopf-knopf" type="button" title="Neues Bild" aria-label="Neues Bild">📄</button>
+      <button id="speichern" class="kopf-knopf" type="button" title="Bild aufheben" aria-label="Bild aufheben">💾</button>
+      <button id="bilder" class="kopf-knopf" type="button" title="Meine Bilder" aria-label="Meine Bilder">🖼️</button>
+    </div>
+  </header>
+
+  <main class="mal-bereich">
+    <aside class="werkzeuge" aria-label="Werkzeuge">
+      <button class="werkzeug aktiv" type="button" data-werkzeug="pinsel" title="Pinsel">🖌️</button>
+      <button class="werkzeug" type="button" data-werkzeug="fuellen" title="Ausfüllen">🪣</button>
+      <button class="werkzeug" type="button" data-werkzeug="stempel" title="Stempel">⭐</button>
+      <button class="werkzeug" type="button" data-werkzeug="radierer" title="Radierer">🧽</button>
+      <div class="trenner"></div>
+      <button class="groesse" type="button" data-groesse="1" title="Dünn"><span class="punkt p1"></span></button>
+      <button class="groesse aktiv" type="button" data-groesse="2" title="Mittel"><span class="punkt p2"></span></button>
+      <button class="groesse" type="button" data-groesse="3" title="Dick"><span class="punkt p3"></span></button>
+    </aside>
+
+    <div class="leinwand-rahmen" id="rahmen">
+      <canvas id="leinwand" aria-label="Malfläche"></canvas>
+    </div>
+
+    <aside class="farben" id="farben" aria-label="Farben"></aside>
+  </main>
+
+  <div class="stempel-leiste" id="stempel-leiste" hidden></div>
+
+  <dialog id="neu-dialog">
+    <h2 class="pin-titel">Neues Bild anfangen?</h2>
+    <div class="app-dialog-knoepfe">
+      <button class="knopf-gross" type="button" id="neu-ja">Ja</button>
+      <button class="knopf-gross zweit" type="button" id="neu-nein">Nein</button>
+    </div>
+  </dialog>
+
+  <dialog id="bilder-dialog" class="bilder-dialog">
+    <h2 class="pin-titel">Meine Bilder</h2>
+    <p class="bilder-leer" id="bilder-leer">Noch keine Bilder aufgehoben. Tippe auf 💾, um ein Bild aufzuheben.</p>
+    <div class="bilder-liste" id="bilder-liste"></div>
+    <button class="pin-abbrechen" type="button" id="bilder-zu">Schließen</button>
+  </dialog>
+
+  <div class="gespeichert" id="gespeichert" hidden>💾 Aufgehoben!</div>
+
+  <script src="../vorschau.js"></script>
+  <script src="../gemeinsam.js"></script>
+  <script src="app.js"></script>
+  <script src="malen.js"></script>
+</body>
+</html>

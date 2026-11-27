@@ -1,0 +1,99 @@
+#!/usr/bin/python3
+"""Kinder-Stick – Video-Fenster für Streamingdienste (Netflix, Disney+).
+
+Startet einen eigenen Firefox (eigenes Profil, Kiosk-Modus) mit der Startadresse des Dienstes
+und zeigt dazu einen kleinen, immer sichtbaren Knopf „⬅ Fertig“ oben links (Fensterregel in
+/usr/share/gnome-kiosk/window-config.ini, Titel „Kinderstick-Fertig“).
+
+Warum Firefox und nicht das Lernfenster: Netflix und Disney+ brauchen den Kopierschutz Widevine.
+Firefox lädt ihn selbst nach (Richtlinie EncryptedMediaExtensions), WebKitGTK kann das nicht.
+Welche Seiten erreichbar sind, regelt der Website-Filter in /etc/firefox/policies/policies.json.
+
+Beenden: Knopf „Fertig“, Schließen von Firefox oder SIGTERM (der Dienst beendet bei Zeitende alle
+Apps mit pkill) – in jedem Fall wird auch der zugehörige Firefox beendet.
+
+Aufruf: videofenster --name netflix --start https://www.netflix.com/
+"""
+import argparse
+import os
+import re
+import signal
+import subprocess
+import sys
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+from gi.repository import Gdk, Gio, GLib, Gtk  # noqa: E402
+
+TITEL = "Kinderstick-Fertig"
+CSS = """
+window.fertig-fenster { background: #1B4332; }
+button.fertig { font-size: 22px; font-weight: bold; padding: 10px 24px; border-radius: 16px;
+                background: #FFB627; color: #1B4332; }
+"""
+
+
+class Videofenster(Gtk.Application):
+    def __init__(self, args):
+        super().__init__(application_id="at.kinderstick.Videofenster",
+                         flags=Gio.ApplicationFlags.NON_UNIQUE)
+        profil = os.path.expanduser(f"~/.local/share/kinderstick/video-{args.name}")
+        os.makedirs(profil, mode=0o700, exist_ok=True)
+        # Eigener Firefox-Prozess, unabhängig vom Kiosk-Firefox der Kinder-Oberfläche
+        self.firefox = subprocess.Popen(
+            ["firefox", "--new-instance", "--profile", profil, "--kiosk", args.start])
+
+    def do_activate(self):
+        stil = Gtk.CssProvider()
+        stil.load_from_string(CSS)
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(), stil, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+        fenster = Gtk.ApplicationWindow(application=self, title=TITEL)
+        fenster.add_css_class("fertig-fenster")
+        fenster.set_decorated(False)
+        fenster.set_resizable(False)
+        knopf = Gtk.Button(label="⬅  Fertig")
+        knopf.add_css_class("fertig")
+        knopf.connect("clicked", lambda *_: self.beenden())
+        fenster.set_child(knopf)
+        fenster.present()
+
+        GLib.timeout_add_seconds(1, self.firefox_pruefen)
+        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, self.beenden)
+
+    def firefox_pruefen(self):
+        if self.firefox.poll() is not None:     # Firefox wurde geschlossen
+            self.quit()
+            return False
+        return True
+
+    def beenden(self, *_):
+        if self.firefox.poll() is None:
+            self.firefox.terminate()
+            try:
+                self.firefox.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.firefox.kill()
+        self.quit()
+        return False
+
+
+def main():
+    p = argparse.ArgumentParser(description="Kinder-Stick Video-Fenster")
+    p.add_argument("--name", required=True, help="Kurzname, z. B. netflix")
+    p.add_argument("--start", required=True, help="Startadresse (https)")
+    args = p.parse_args()
+    if not re.fullmatch(r"[a-z]{2,20}", args.name) or not args.start.startswith("https://"):
+        print("Ungültiger Name oder Startadresse.", file=sys.stderr)
+        return 1
+    app = Videofenster(args)
+    try:
+        return app.run([sys.argv[0]])
+    finally:
+        app.beenden()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

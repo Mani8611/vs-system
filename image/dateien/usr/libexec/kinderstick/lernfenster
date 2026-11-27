@@ -19,7 +19,10 @@ gi.require_version("WebKit", "6.0")
 from gi.repository import Gdk, Gio, Gtk, WebKit  # noqa: E402
 
 CSS = """
-button.fertig { font-size: 20px; font-weight: bold; padding: 8px 24px; }
+.leiste { background: #1B4332; padding: 10px 16px; }
+.leiste .titel { color: white; font-size: 24px; font-weight: bold; }
+button.fertig { font-size: 22px; font-weight: bold; padding: 10px 28px; border-radius: 16px;
+                background: #FFB627; color: #1B4332; }
 """
 
 
@@ -30,7 +33,7 @@ flex-direction:column;align-items:center;justify-content:center;height:100vh;mar
 <h1 style="font-size:40px;margin:16px 0 8px">Kein Internet</h1>
 <p style="font-size:24px;max-width:700px">Dieses Programm braucht Internet.<br>
 Bitte Mama oder Papa: im Eltern-Bereich (Schloss unten rechts) das WLAN verbinden.</p>
-<p style="font-size:20px;color:#5C6B73">Tippe oben auf „Fertig – zurück“.</p>
+<p style="font-size:20px;color:#5C6B73">Tippe oben links auf „Fertig – zurück“.</p>
 </body></html>"""
 
 
@@ -59,14 +62,18 @@ class Lernfenster(Gtk.Application):
             Gdk.Display.get_default(), stil, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         fenster = Gtk.ApplicationWindow(application=self, title=self.args.titel)
-        kopf = Gtk.HeaderBar()
-        kopf.set_show_title_buttons(False)
-        knopf = Gtk.Button(label="✔  Fertig – zurück")
+        # Knopf-Leiste im Inhalt, nicht in der Titelleiste: die blendet GTK im Vollbild aus
+        # (Test 26.11.2026: bei ANTON kam man nicht mehr zurück)
+        leiste = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        leiste.add_css_class("leiste")
+        knopf = Gtk.Button(label="⬅  Fertig – zurück")
         knopf.add_css_class("suggested-action")
         knopf.add_css_class("fertig")
         knopf.connect("clicked", lambda *_: fenster.close())
-        kopf.pack_start(knopf)
-        fenster.set_titlebar(kopf)
+        leiste.append(knopf)
+        titel = Gtk.Label(label=self.args.titel)
+        titel.add_css_class("titel")
+        leiste.append(titel)
 
         basis = os.path.expanduser("~/.local/share/kinderstick/lernfenster")
         cache = os.path.expanduser("~/.cache/kinderstick/lernfenster")
@@ -77,7 +84,11 @@ class Lernfenster(Gtk.Application):
         ansicht.connect("load-failed", self.laden_fehlgeschlagen)
         ansicht.load_uri(self.args.start)
 
-        fenster.set_child(ansicht)
+        ansicht.set_vexpand(True)
+        inhalt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        inhalt.append(leiste)
+        inhalt.append(ansicht)
+        fenster.set_child(inhalt)
         fenster.fullscreen()
         fenster.present()
 

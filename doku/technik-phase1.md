@@ -107,3 +107,15 @@ Dann im Browser `http://127.0.0.1:8411/` öffnen. Im Testmodus werden keine Syst
 - **Vollbild:** gnome-kiosk-Fensterregeln (`image/dateien/usr/share/gnome-kiosk/window-config.ini`).
 - **Start über EFI/BOOT (Stufe 1):** `image/efi-direktstart.sh` entfernt `fbx64.efi` aus dem Fallback-Pfad und legt `grubx64.efi` daneben → Stick erscheint als normaler USB-Eintrag, kein Firmware-Eintrag „Fedora“. Kontrolle im Bau-Protokoll („EFI-Bereich des Abbilds anzeigen“). **Ungetestet.**
 - **Immer vom Stick starten (Stufe 2):** nur über die Startreihenfolge im BIOS des jeweiligen Laptops („USB zuerst“) – setzt Stufe 1 voraus.
+
+---
+
+## Änderungen nach dem 3. Hardware-Test (27.11.2026) – noch nicht gebaut
+
+- **Vorlesen aus** (`VORLESEN_AKTIV = false` in `gemeinsam.js`); speech-dispatcher/espeak-ng entfernt.
+- **Programme ersetzt:** Tux Paint, Tux Math, Tux Typing, KLettres, KTuberling, Blinken entfernt (ging nicht bzw. nicht kindgerecht). Neu als **eigene Programme der Oberfläche** (`oberflaeche/apps/`, laufen auch in der Vorschau): Malen, Rechnen, Buchstaben, Merkspiel. Sie passen sich an die Schulstufe an (`schulstufe` in `/api/status`). Apps mit `"seite"` in `apps.json` öffnet die Startseite selbst; `app.js` kehrt bei Sperre automatisch zurück.
+- **GCompris nach Klasse:** `--difficulty 1-3 / 2-4 / 3-5 / 4-6` (Feld `optionen_nach_klasse`), dazu `--fullscreen --enable-kioskmode`.
+- **Lernfenster:** „Fertig“-Knopf im Inhalt statt in der Titelleiste (im Vollbild blendet GTK die Titelleiste aus – man kam aus ANTON nicht mehr heraus).
+- **Uhrzeit:** `/etc/adjtime` = `LOCAL` (Hardware-Uhr von Windows-Laptops läuft in Ortszeit; vorher ging der Stick ohne WLAN 1 h vor → Schlafenszeit zu früh). Einrichtung zeigt die Uhrzeit des Laptops und warnt, wenn sofort Schlafenszeit wäre.
+- **App-Freigaben:** gespeichert wird `gesperrte_apps` (neue Apps nach Updates sind frei) bzw. `freigeschaltete_apps` für Apps mit `"standard_aus"`.
+- **Netflix und Disney+** (`standard_aus`, erst nach Freischaltung im Eltern-Bereich): `/usr/libexec/kinderstick/videofenster` startet einen eigenen Firefox (eigenes Profil, Kiosk) und einen kleinen „⬅ Fertig“-Knopf oben links (gnome-kiosk-Regel `match-title=Kinderstick-Fertig`, `set-above`). Firefox-Richtlinien: Website-Filter-Ausnahmen `*.netflix.com`, `*.disneyplus.com`, `registerdisney.go.com`; `EncryptedMediaExtensions` an (Widevine). **Ungetestet:** Widevine-Nachladen im Kiosk-Firefox, Disney+-Anmeldung (evtl. weitere Domains nötig), Bildqualität unter Linux (vermutlich max. 720p). Eltern sperren die Erwachsenen-Profile selbst mit Profil-PIN. Kein Netflix-/Disney-Logo verwenden, nicht mit den Marken werben.

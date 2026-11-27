@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rechnen</title>
+  <link rel="stylesheet" href="../stil.css">
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="rechnen.css">
+</head>
+<body class="kind-app">
+  <header class="app-kopf">
+    <button id="zurueck" class="zurueck-knopf" type="button">⬅ Fertig</button>
+    <h1>➕ Rechnen</h1>
+    <div class="app-kopf-rechts"><span class="sterne" id="sterne">⭐ 0</span></div>
+  </header>
+
+  <!-- 1. Auswahl der Rechenart -->
+  <main class="app-inhalt" id="auswahl">
+    <h2 class="wahl-titel" id="auswahl-titel">Was möchtest du rechnen?</h2>
+    <div class="wahl-karten" id="wahl-karten"></div>
+  </main>
+
+  <!-- 2. Aufgaben -->
+  <main class="app-inhalt" id="spiel" hidden>
+    <div class="fortschritt" id="fortschritt"></div>
+    <div class="aufgabe-zeile">
+      <div class="eule" id="eule" aria-hidden="true">🦉</div>
+      <div class="aufgabe" id="aufgabe"></div>
+    </div>
+    <div class="hilfe" id="hilfe" aria-hidden="true"></div>
+    <p class="lob" id="lob"></p>
+    <div class="tasten" id="tasten"></div>
+  </main>
+
+  <!-- 3. Geschafft -->
+  <main class="app-inhalt" id="ende" hidden>
+    <div class="geschafft">
+      <div class="gross" id="ende-symbol">🏆</div>
+      <h2 id="ende-titel">Geschafft!</h2>
+      <p id="ende-text"></p>
+      <button class="knopf-gross" type="button" id="nochmal">Nochmal</button>
+      <button class="knopf-gross zweit" type="button" id="andere">Etwas anderes</button>
+    </div>
+  </main>
+
+  <script src="../vorschau.js"></script>
+  <script src="../gemeinsam.js"></script>
+  <script src="app.js"></script>
+  <script src="rechnen.js"></script>
+</body>
+</html>

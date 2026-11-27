@@ -76,7 +76,8 @@ function kachelnZeichnen(apps) {
 async function starten(app) {
   vorlesen(app.name);
   try {
-    await api("/api/starten", { app: app.id });
+    const antwort = await api("/api/starten", { app: app.id });
+    if (antwort.seite) location.href = antwort.seite;   // eigenes Programm (apps/…)
   } catch (e) {
     vorlesen(e.message);
     aktualisieren();

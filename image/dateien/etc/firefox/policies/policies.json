@@ -2,8 +2,14 @@
   "policies": {
     "WebsiteFilter": {
       "Block": ["<all_urls>"],
-      "Exceptions": ["http://127.0.0.1/*"]
+      "Exceptions": [
+        "http://127.0.0.1/*",
+        "https://*.netflix.com/*",
+        "https://*.disneyplus.com/*",
+        "https://registerdisney.go.com/*"
+      ]
     },
+    "EncryptedMediaExtensions": { "Enabled": true, "Locked": true },
     "Homepage": {
       "URL": "http://127.0.0.1:8411/",
       "Locked": true,

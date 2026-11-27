@@ -18,8 +18,13 @@ async function api(pfad, daten) {
   return json;
 }
 
+/** Vorlesen ist ausgeschaltet (Test 26.11.2026: die Stimme klingt nicht gut).
+ *  Zum Wiedereinschalten VORLESEN_AKTIV auf true setzen – später ggf. als Eltern-Einstellung. */
+const VORLESEN_AKTIV = false;
+
 /** Liest einen Text vor (Web Speech API, falls verfügbar). */
 function vorlesen(text) {
+  if (!VORLESEN_AKTIV) return;
   try {
     if (!("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();

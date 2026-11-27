@@ -14,23 +14,15 @@ FROM quay.io/fedora-ostree-desktops/silverblue:${FEDORA_VERSION}
 
 # Zusatzpakete:
 #  - gnome-kiosk-script-session: Kiosk-Sitzung für das Kinderkonto
-#  - gcompris-qt, tuxpaint, tuxmath, tuxtype2, klettres, ktuberling, blinken:
-#    Kinderprogramme (offline) – Paketnamen am 20.11.2026 auf packages.fedoraproject.org
-#    für Fedora 44 und 45 bestätigt (Tux Typing heißt als Paket „tuxtype2“, Befehl „tuxtype“)
-#  - speech-dispatcher, espeak-ng: Vorlesen in der Kinder-Oberfläche (Web Speech API)
-#  - python3-gobject, gtk4, webkitgtk6.0: „Lernfenster“ für freigegebene Lern-Webseiten
+#  - gcompris-qt: Lernspiele (offline). Malen, Rechnen, Buchstaben und Merkspiel sind eigene
+#    Programme der Oberfläche (oberflaeche/apps/). Tux Paint, Tux Math, Tux Typing, KLettres,
+#    KTuberling, Blinken wurden nach dem Test am 26.11.2026 entfernt (nicht kindgerecht / ging nicht).
+#    Vorlesen ist ausgeschaltet, daher kein speech-dispatcher/espeak-ng mehr.
+#  - python3-gobject, gtk4, webkitgtk6.0: „Lernfenster“ für freigegebene Lern-Webseiten (ANTON)
 #  - glibc-langpack-de: deutsche Sprache
 RUN dnf -y install \
         gnome-kiosk-script-session \
         gcompris-qt \
-        tuxpaint \
-        tuxmath \
-        tuxtype2 \
-        klettres \
-        ktuberling \
-        blinken \
-        speech-dispatcher \
-        espeak-ng \
         python3-gobject \
         gtk4 \
         webkitgtk6.0 \

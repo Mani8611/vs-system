@@ -1,58 +1,66 @@
 [
   {
+    "id": "malen",
+    "name": "Malen",
+    "symbol": "🎨",
+    "beschreibung": "Eigenes Malprogramm: Pinsel, Ausfüllen, Stempel, Radierer, Rückgängig. Bilder können aufgehoben werden.",
+    "seite": "apps/malen.html"
+  },
+  {
+    "id": "rechnen",
+    "name": "Rechnen",
+    "symbol": "➕",
+    "beschreibung": "Eigenes Rechenspiel: 10 Aufgaben pro Runde, passend zur Klasse (1. Klasse bis 10, dann bis 20, mit Bildhilfe).",
+    "seite": "apps/rechnen.html"
+  },
+  {
+    "id": "buchstaben",
+    "name": "Buchstaben",
+    "symbol": "🔤",
+    "beschreibung": "Eigenes Lesespiel: Anfangsbuchstaben erkennen und Wörter lesen – mit Bildern, ohne Sprachausgabe.",
+    "seite": "apps/buchstaben.html"
+  },
+  {
+    "id": "merkspiel",
+    "name": "Merkspiel",
+    "symbol": "🧠",
+    "beschreibung": "Eigenes Memory mit Tierbildern, 12 bis 24 Karten.",
+    "seite": "apps/merkspiel.html"
+  },
+  {
     "id": "gcompris",
     "name": "Lernspiele",
     "symbol": "🧩",
-    "beschreibung": "GCompris: rund 195 Lernaktivitäten für 2- bis 10-Jährige – Maus und Tastatur, Buchstaben, Zählen und Rechnen, Uhr und Geld, Memory, Puzzles, Labyrinthe, Tiere, Musik.",
-    "befehl": ["gcompris-qt"]
-  },
-  {
-    "id": "tuxpaint",
-    "name": "Malen",
-    "symbol": "🎨",
-    "beschreibung": "Tux Paint: Malprogramm für Kinder – Pinsel, Stempel, Formen, Text und Zaubereffekte, mit lustigen Geräuschen. Bilder bleiben gespeichert.",
-    "befehl": ["tuxpaint", "--fullscreen"]
+    "beschreibung": "GCompris: rund 195 Lernaktivitäten für 2- bis 10-Jährige. Auf dem Stick nur die Schwierigkeitsstufen passend zur Klasse.",
+    "befehl": ["gcompris-qt", "--fullscreen", "--enable-kioskmode", "--locale", "de_DE.UTF-8"],
+    "optionen_nach_klasse": {
+      "1": ["--difficulty", "1-3"],
+      "2": ["--difficulty", "2-4"],
+      "3": ["--difficulty", "3-5"],
+      "4": ["--difficulty", "4-6"]
+    }
   },
   {
     "id": "anton",
-    "name": "ANTON lernen",
+    "name": "ANTON",
     "symbol": "📚",
-    "beschreibung": "ANTON: Lern-App nach Lehrplan – Deutsch, Mathematik, Sachunterricht, Musik. Braucht Internet und ein (kostenloses) Konto.",
+    "beschreibung": "ANTON: Lern-App nach Lehrplan (Deutsch, Mathematik, Sachunterricht). Klasse wird in ANTON gewählt. Braucht Internet.",
     "befehl": ["/usr/libexec/kinderstick/lernfenster", "--titel", "ANTON", "--start", "https://anton.app/de/", "--erlaubt", "anton.app"]
   },
   {
-    "id": "klettres",
-    "name": "Buchstaben",
-    "symbol": "🔤",
-    "beschreibung": "KLettres: Buchstaben und Silben hören und eintippen, für Leseanfänger. Deutsche Sprachausgabe vorhanden (spricht teils Buchstabennamen statt Laute – vor Einsatz prüfen).",
-    "befehl": ["klettres"]
+    "id": "netflix",
+    "name": "Netflix",
+    "symbol": "🎬",
+    "beschreibung": "Netflix im Kinderprofil (eigenes Abo nötig). Erwachsenen-Profile bitte in Netflix mit einer Profil-PIN sperren. Zählt zur Bildschirmzeit.",
+    "befehl": ["/usr/libexec/kinderstick/videofenster", "--name", "netflix", "--start", "https://www.netflix.com/"],
+    "standard_aus": true
   },
   {
-    "id": "tuxmath",
-    "name": "Rechnen",
-    "symbol": "➕",
-    "beschreibung": "Tux Math: Rechenaufgaben als Spiel – Kometen mit Aufgaben abwehren, bevor sie landen. Schwierigkeit einstellbar.",
-    "befehl": ["tuxmath", "--fullscreen"]
-  },
-  {
-    "id": "tuxtype",
-    "name": "Tippen lernen",
-    "symbol": "⌨️",
-    "beschreibung": "Tux Typing: Tastatur spielerisch kennenlernen – herabfallende Fische mit dem richtigen Buchstaben fangen.",
-    "befehl": ["tuxtype"]
-  },
-  {
-    "id": "ktuberling",
-    "name": "Kartoffelmann",
-    "symbol": "🥔",
-    "beschreibung": "KTuberling: Kartoffelmännchen anziehen und Szenen gestalten – Teile werden beim Ablegen vorgelesen. Für die Kleinsten.",
-    "befehl": ["ktuberling"]
-  },
-  {
-    "id": "blinken",
-    "name": "Merkspiel",
-    "symbol": "🧠",
-    "beschreibung": "Blinken: Farben und Töne in der richtigen Reihenfolge nachspielen – trainiert das Gedächtnis.",
-    "befehl": ["blinken"]
+    "id": "disney",
+    "name": "Disney+",
+    "symbol": "🏰",
+    "beschreibung": "Disney+ im Kinderprofil (eigenes Abo nötig). Erwachsenen-Profile bitte in Disney+ mit einer Profil-PIN sperren. Zählt zur Bildschirmzeit.",
+    "befehl": ["/usr/libexec/kinderstick/videofenster", "--name", "disney", "--start", "https://www.disneyplus.com/"],
+    "standard_aus": true
   }
 ]
